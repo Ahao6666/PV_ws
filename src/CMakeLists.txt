@@ -120,7 +120,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# add_executable(offboard_node src/offboard_node.cpp)
+ add_executable(offboard_node src/offboard_node.cpp)
  add_executable(actuator_ctrl src/actuator_ctrl.cpp)
 # add_executable(att_rate_setpoint src/att_rate_setpoint.cpp)
 
@@ -129,7 +129,7 @@ include_directories(
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(offboard_node   ${catkin_LIBRARIES} )
+ target_link_libraries(offboard_node   ${catkin_LIBRARIES} )
  target_link_libraries(actuator_ctrl   ${catkin_LIBRARIES} )
 # target_link_libraries(att_rate_setpoint   ${catkin_LIBRARIES} )
 
