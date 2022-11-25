@@ -11,8 +11,14 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   mavros
   roscpp
+  cmake_modules
 )
 
+find_package(Eigen REQUIRED) # 添加 2
+  catkin_package(
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS roscpp
+)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -115,14 +121,14 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories( ${catkin_INCLUDE_DIRS})
+include_directories( ${/usr/local/include/eigen3/Eigen}) # 添加3
+
 
  add_executable(off_mission_node src/offboard_node.cpp)
  add_executable(actuator_ctrl src/actuator_ctrl.cpp)
  add_executable(att_rate_setpoint src/att_rate_setpoint.cpp)
+ add_executable(att_setpoint src/att_setpoint.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -132,6 +138,7 @@ include_directories(
  target_link_libraries(off_mission_node   ${catkin_LIBRARIES} )
  target_link_libraries(actuator_ctrl   ${catkin_LIBRARIES} )
  target_link_libraries(att_rate_setpoint   ${catkin_LIBRARIES} )
+ target_link_libraries(att_setpoint   ${catkin_LIBRARIES} )
 
 #############
 ## Install ##
