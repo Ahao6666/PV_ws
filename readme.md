@@ -7,6 +7,9 @@
 or 
 - `roslaunch px4 mavros_posix_sitl.launch fcu_url:="udp://:14540@127.0.0.1:14557"`
 
+or
+- `roslaunch px4 mavros_pv_sitl.launch`
+
 ## open QGC
 - `cd ~/Downloads`
 - `./QGroundControl.AppImage`
