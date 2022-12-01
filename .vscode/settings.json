@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "cmath": "cpp",
+        "complex": "cpp",
+        "core": "cpp",
+        "unordered_map": "cpp"
+    }
+}
