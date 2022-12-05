@@ -1,9 +1,14 @@
-/**
- * @file offb_node.cpp
- * @brief Offboard control example node, written with MAVROS version 0.19.x, PX4 Pro Flight
- * Stack and tested in Gazebo SITL
- */
+/******************************************************************************
+ * Copyright (c) 2021-2022 The IUSL_UAV Authors. All rights reserved.
+ * See the AUTHORS file for names of contributors.
+ *****************************************************************************/
 
+/******************************************************************************
+ * @file inclined_landing.cpp
+ * @brief inclined landing node, written with MAVROS, PX4 Pro Flight
+ * Stack and tested in Gazebo SITL
+ * @author Jiahao Shen <shenjiahao@westlake.edu.cn>
+ *****************************************************************************/
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <mavros_msgs/CommandBool.h>
@@ -13,13 +18,40 @@
 #include <cmath>
 #include "Eigen/Eigen"
 
-Eigen::Vector3d ToEulerAngles(Eigen::Quaterniond q);
-
-
+/**
+ * @brief switch the Quaterniond to euler angle
+ *
+ * @param Quaterniond input Quaterniond data [w,x,y,z]
+ *
+ * @return Vector3d Euler angle [roll, pitch, yaw]
+ */
+Eigen::Vector3d ToEulerAngles(Eigen::Quaterniond q) {
+    Eigen::Vector3d angles;
+ 
+    // roll (x-axis rotation)
+    double sinr_cosp = 2 * (q.w() * q.x() + q.y() * q.z());
+    double cosr_cosp = 1 - 2 * (q.x() * q.x() + q.y() * q.y());
+    angles(2) = std::atan2(sinr_cosp, cosr_cosp);
+ 
+    // pitch (y-axis rotation)
+    double sinp = 2 * (q.w() * q.y() - q.z() * q.x());
+    if (std::abs(sinp) >= 1)
+        angles(1) = std::copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+    else
+        angles(1) = std::asin(sinp);
+ 
+    // yaw (z-axis rotation)
+    double siny_cosp = 2 * (q.w() * q.z() + q.x() * q.y());
+    double cosy_cosp = 1 - 2 * (q.y() * q.y() + q.z() * q.z());
+    angles(0) = std::atan2(siny_cosp, cosy_cosp);
+ 
+    return angles;
+}// Get vehicle state
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
 }
+// Get local position
 geometry_msgs::PoseStamped local_position;
 void local_position_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
     local_position = *msg;
@@ -29,17 +61,22 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "inclined_landing");
     ros::NodeHandle nh;
-
+    // vehicle state callback function
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
             ("mavros/state", 10, state_cb);
+    // local position callback function
     ros::Subscriber local_position_sub = nh.subscribe<geometry_msgs::PoseStamped>
             ("mavros/local_position/pose", 10, local_position_cb);
+    // set local position 
     ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>
             ("mavros/setpoint_position/local", 10);
+    // UAV arm state switch
     ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>
             ("mavros/cmd/arming");
+    // vehicle mode set
     ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>
             ("mavros/set_mode");
+    // get model state client
     ros::ServiceClient get_model_state_client = nh.serviceClient<gazebo_msgs::GetModelState>(
 		"/gazebo/get_model_state");
 	gazebo_msgs::GetModelState get_model_state_srv_msg;
@@ -54,7 +91,7 @@ int main(int argc, char **argv)
     double set_position_x = 0;
     double set_position_y = 0;
     double set_position_z = 0;
-    // get UAV position offset
+    // get UAV position offset from rosparam list
     double uav_position_offset_x=0;
     double uav_position_offset_y=0;
     double uav_position_offset_z=0;
@@ -78,14 +115,14 @@ int main(int argc, char **argv)
     ros::Time last_time = ros::Time::now();
 
     while(ros::ok()){
+        //get the 'pv_car' model state from gazebo
         get_model_state_srv_msg.request.model_name = "pv_car";
         get_model_state_srv_msg.request.relative_entity_name = "link";
         // "link" is the entity name when I add a pv_car in gazebo
         get_model_state_client.call(get_model_state_srv_msg);
         pv_car_pos = get_model_state_srv_msg.response.pose.position;
-        // if( current_state.mode == "OFFBOARD" )
-        //     ROS_INFO("UAV is in Offboard mode");
 
+        // get the UAV pose
         position_x = local_position.pose.position.x;
         position_y = local_position.pose.position.y;
         position_z = local_position.pose.position.z;
@@ -107,6 +144,7 @@ int main(int argc, char **argv)
             set_position_z = pv_car_pos.z - uav_position_offset_z + 3;
         }
         else{
+            // When the distance error is small then slow down at 0.5m/s
             set_position_z = position_z - 0.5 * dt;
             // if(fabs(eulerAngle[0])>0.05||fabs(eulerAngle[1]>0.05)){
             //     if( set_mode_client.call(manual_set_mode) &&
@@ -131,28 +169,4 @@ int main(int argc, char **argv)
     }
 
     return 0;
-}
-
-
-Eigen::Vector3d ToEulerAngles(Eigen::Quaterniond q) {
-    Eigen::Vector3d angles;
- 
-    // roll (x-axis rotation)
-    double sinr_cosp = 2 * (q.w() * q.x() + q.y() * q.z());
-    double cosr_cosp = 1 - 2 * (q.x() * q.x() + q.y() * q.y());
-    angles(2) = std::atan2(sinr_cosp, cosr_cosp);
- 
-    // pitch (y-axis rotation)
-    double sinp = 2 * (q.w() * q.y() - q.z() * q.x());
-    if (std::abs(sinp) >= 1)
-        angles(1) = std::copysign(M_PI / 2, sinp); // use 90 degrees if out of range
-    else
-        angles(1) = std::asin(sinp);
- 
-    // yaw (z-axis rotation)
-    double siny_cosp = 2 * (q.w() * q.z() + q.x() * q.y());
-    double cosy_cosp = 1 - 2 * (q.y() * q.y() + q.z() * q.z());
-    angles(0) = std::atan2(siny_cosp, cosy_cosp);
- 
-    return angles;
 }
