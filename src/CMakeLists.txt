@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(off_mission)
+project(pv_mission)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -110,7 +110,7 @@ find_package(Eigen REQUIRED) # 添加 2
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES off_mission
+  LIBRARIES pv_mission
   CATKIN_DEPENDS geometry_msgs mavros roscpp
   DEPENDS system_lib
 )
