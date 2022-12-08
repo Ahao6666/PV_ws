@@ -51,10 +51,10 @@ int main(int argc, char** argv) {
 	trajectory_msgs::JointTrajectoryPoint trajectory_points;
 	// joint_names field
 	trajectory.joint_names.resize(4);
-	trajectory.joint_names[0] = "joint1";
-	trajectory.joint_names[1] = "joint2";
-	trajectory.joint_names[2] = "joint3";
-	trajectory.joint_names[3] = "joint4";
+	trajectory.joint_names[0] = "iris_pv::landing_leg::joint1";
+	trajectory.joint_names[1] = "iris_pv::landing_leg::joint2";
+	trajectory.joint_names[2] = "iris_pv::landing_leg::joint3";
+	trajectory.joint_names[3] = "iris_pv::landing_leg::joint4";
 	// positions and velocities field
 	trajectory_points.positions.resize(4);
 
@@ -98,15 +98,10 @@ int main(int argc, char** argv) {
 	// assign current joints to start joints
 	start_jnts = origin_jnts;
 
-	// define the safe point, avoid singularity at origin
-	std::vector<double> safe_jnts;
-	safe_jnts.resize(4);
-	safe_jnts[0] = -M_PI/2; // joint1, 
-	safe_jnts[1] = -M_PI/2; // joint2, 
-	safe_jnts[2] = -M_PI/2; // joint3, 
-	safe_jnts[3] = -M_PI/2; // joint4, 
-	// assign the safe joints to end joints
-	end_jnts = safe_jnts;
+	end_jnts[0] = -M_PI/2; // joint1, 
+	end_jnts[1] = -M_PI/2; // joint2, 
+	end_jnts[2] = -M_PI/2; // joint3, 
+	end_jnts[3] = -M_PI/2; // joint4, 
 
 	// prepare the goal message
 	trajectory.points.clear();
@@ -149,10 +144,10 @@ int main(int argc, char** argv) {
 
 	// assign the start joints and end joints
 	start_jnts = origin_jnts; // start with last joints
-	end_jnts[0] = M_PI/2; 	// joint1, 
-	end_jnts[1] = -M_PI/3; 	// joint2, 
-	end_jnts[2] = 0; 		// joint3, 
-	end_jnts[3] = 0; 		// joint4, 
+	end_jnts[0] = M_PI/6; 	// joint1, 
+	end_jnts[1] = M_PI/6; 	// joint2, 
+	end_jnts[2] = M_PI/6; 		// joint3, 
+	end_jnts[3] = M_PI/6; 		// joint4, 
 
 	// prepare the goal message
 	trajectory.points.clear();
@@ -194,9 +189,9 @@ int main(int argc, char** argv) {
 	}
 	start_jnts = origin_jnts;
 	end_jnts[0] = -M_PI/6; 	// joint1, 
-	end_jnts[1] = -M_PI/2; 	// joint2, 
-	end_jnts[2] = M_PI/2; 	// joint3, 
-	end_jnts[3] = M_PI/2; 	// joint4, 
+	end_jnts[1] = -M_PI/6; 	// joint2, 
+	end_jnts[2] = -M_PI/6; 	// joint3, 
+	end_jnts[3] = -M_PI/6; 	// joint4, 
 	// prepare the goal message
 	trajectory.points.clear();
 	for (int i=0; i<time_3+1; i++) { // there are time_3+1 points, including start and end

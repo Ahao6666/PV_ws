@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   actionlib_msgs
   trajectory_msgs
+  gazebo_msgs
 )
 
 ## Generate services in the 'srv' folder
@@ -37,7 +38,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES landing_leg
-#  CATKIN_DEPENDS actionlib catkin_simple roscpp
+  CATKIN_DEPENDS actionlib catkin_simple roscpp
 #  DEPENDS system_lib
 )
 

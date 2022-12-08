@@ -71,10 +71,22 @@ void TrajectoryActionServer::executeCB(const actionlib::SimpleActionServer<landi
 
 	ROS_INFO("trajectory message commands %d joint(s)", njnts);
 	//initialize command publishers for each joints
+	std::string new_joint_name;
 	pos_cmd_publisher_.resize(njnts);
 	for (int i=0; i<njnts; i++) {
+		if(trajectory.joint_names[i] == "iris_pv::landing_leg::joint1")
+			new_joint_name = "joint1";
+		else if(trajectory.joint_names[i] == "iris_pv::landing_leg::joint2")
+			new_joint_name = "joint2";
+		else if(trajectory.joint_names[i] == "iris_pv::landing_leg::joint3")
+			new_joint_name = "joint3";
+		else if(trajectory.joint_names[i] == "iris_pv::landing_leg::joint4")
+			new_joint_name = "joint4";
+		else
+			ROS_INFO("joint name error!");
+
 		pos_cmd_publisher_[i] = nh_.advertise<std_msgs::Float64>(
-			trajectory.joint_names[i] + "_pos_cmd", 1, true);
+			new_joint_name + "_pos_cmd", 1, true);
 	}
 
 	// joint array positions in the calculation of interpolation
