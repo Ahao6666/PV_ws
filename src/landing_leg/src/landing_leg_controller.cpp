@@ -118,7 +118,6 @@ void Joint::posCmdCB(const std_msgs::Float64& pos_cmd_msg) {
 }
 
 void Joint::getJointState() {
-	// ROS_INFO("start:%s",get_joint_state_srv_msg.request.joint_name.c_str());
 	// get joint state
 	get_jnt_state_client.call(get_joint_state_srv_msg);
 
@@ -128,10 +127,9 @@ void Joint::getJointState() {
 	pos_publisher.publish(pos_msg);
 
 	// publish joint velocity
-	vel_cur = get_joint_state_srv_msg.response.rate[1];
+	vel_cur = get_joint_state_srv_msg.response.rate[0];
 	vel_msg.data = vel_cur;
 	vel_publisher.publish(vel_msg);
-
 	// publish joint_state_msg
 	joint_state_msg.header.stamp = ros::Time::now();
 	joint_state_msg.position[0] = pos_cur;
@@ -147,13 +145,17 @@ void Joint::jointTrqControl() {
 		pos_err = pos_err - 2 * M_PI;
 	if (pos_err > M_PI)
 		pos_err = pos_err + 2 * M_PI;
+	ROS_INFO("pos_err:  %f,vel_cur:%f",pos_err,vel_cur);
 	// control algorithm in one line
 	trq_cmd  = kp * pos_err - kv * vel_cur;
 	// publish the torque message
+	ROS_INFO("trq_cmd:%f", trq_cmd);
 	trq_msg.data = trq_cmd;
 	trq_publisher.publish(trq_msg);
 	// send torque command to gazebo
 	effort_cmd_srv_msg.request.effort = trq_cmd;
+	// effort_cmd_srv_msg.request.start_time.sec = 0;
+	// effort_cmd_srv_msg.request.duration.sec = 1000;	
 	set_trq_client.call(effort_cmd_srv_msg);
 	// make sure service call was successful
 	bool result = effort_cmd_srv_msg.response.success;
@@ -198,7 +200,7 @@ int main(int argc, char **argv) {
 	}
 	ROS_INFO("/gazebo/get_joint_properties service exists");
 
-	double dt = 0.1; // sample time for the controller
+	double dt = 0.01; // sample time for the controller
 
 	// instantiate 4 joint instances
 	Joint joint1(nh, "iris_pv::landing_leg::joint1", dt);
@@ -206,10 +208,10 @@ int main(int argc, char **argv) {
 	Joint joint3(nh, "iris_pv::landing_leg::joint3", dt);
 	Joint joint4(nh, "iris_pv::landing_leg::joint4", dt);
 
-	joint1.kpkvSetting(1, 0);
-	joint2.kpkvSetting(1, 0);
-	joint3.kpkvSetting(1, 0);
-	joint4.kpkvSetting(1, 0);
+	joint1.kpkvSetting(4.0, 0.1);
+	joint2.kpkvSetting(4.0, 0.1);
+	joint3.kpkvSetting(4.0, 0.1);
+	joint4.kpkvSetting(4.0, 0.1);
 
 	ros::Rate rate_timer(1 / dt);
 	while(ros::ok()) {
