@@ -60,33 +60,33 @@ void local_position_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "inclined_landing");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh_;
     // vehicle state callback function
-    ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
+    ros::Subscriber state_sub_ = nh_.subscribe<mavros_msgs::State>
             ("mavros/state", 10, state_cb);
     // local position callback function
-    ros::Subscriber local_position_sub = nh.subscribe<geometry_msgs::PoseStamped>
+    ros::Subscriber local_position_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>
             ("mavros/local_position/pose", 10, local_position_cb);
-    // set local position 
-    ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>
+    // set UAV local position 
+    ros::Publisher local_pos_pub_ = nh_.advertise<geometry_msgs::PoseStamped>
             ("mavros/setpoint_position/local", 10);
     // UAV arm state switch
-    ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>
-            ("mavros/cmd/arming");
+    // ros::ServiceClient arming_client_ = nh_.serviceClient<mavros_msgs::CommandBool>
+    //         ("mavros/cmd/arming");
     // vehicle mode set
-    ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>
-            ("mavros/set_mode");
-    // get model state client
-    ros::ServiceClient get_model_state_client = nh.serviceClient<gazebo_msgs::GetModelState>(
+    // ros::ServiceClient set_mode_client_ = nh_.serviceClient<mavros_msgs::SetMode>
+    //         ("mavros/set_mode");
+    // get pv car model state client
+    ros::ServiceClient get_model_state_client_ = nh_.serviceClient<gazebo_msgs::GetModelState>(
 		"/gazebo/get_model_state");
-	gazebo_msgs::GetModelState get_model_state_srv_msg;
-	geometry_msgs::Point pv_car_pos;    // {float64 x, float64 y, float z}
-    geometry_msgs::PoseStamped pose;    // UAV setpoint
+	gazebo_msgs::GetModelState get_model_state_srv_msg_;
+	geometry_msgs::Point pv_car_pos_;    // {float64 x, float64 y, float z}
+    Eigen::Quaterniond pv_car_ori_;     // {w,x,y,z}
+    geometry_msgs::PoseStamped UAV_pose_set;    // UAV setpoint
     // get UAV local position
     double position_x = local_position.pose.position.x;
     double position_y = local_position.pose.position.y;
     double position_z = local_position.pose.position.z;
-    Eigen::Quaterniond quaternion;
     // set UAV local position set
     double set_position_x = 0;
     double set_position_y = 0;
@@ -116,53 +116,48 @@ int main(int argc, char **argv)
 
     while(ros::ok()){
         //get the 'pv_car' model state from gazebo
-        get_model_state_srv_msg.request.model_name = "pv_car";
-        get_model_state_srv_msg.request.relative_entity_name = "link";
+        get_model_state_srv_msg_.request.model_name = "pv_car";
+        get_model_state_srv_msg_.request.relative_entity_name = "link";
         // "link" is the entity name when I add a pv_car in gazebo
-        get_model_state_client.call(get_model_state_srv_msg);
-        pv_car_pos = get_model_state_srv_msg.response.pose.position;
-
+        get_model_state_client_.call(get_model_state_srv_msg_);
+        pv_car_pos_ = get_model_state_srv_msg_.response.pose.position;
+        pv_car_ori_.x() = get_model_state_srv_msg_.response.pose.orientation.x;
+        pv_car_ori_.y() = get_model_state_srv_msg_.response.pose.orientation.y;
+        pv_car_ori_.z() = get_model_state_srv_msg_.response.pose.orientation.z;
+        pv_car_ori_.w() = get_model_state_srv_msg_.response.pose.orientation.w;
         // get the UAV pose
         position_x = local_position.pose.position.x;
         position_y = local_position.pose.position.y;
         position_z = local_position.pose.position.z;
-        quaternion.x() = local_position.pose.orientation.x;
-        quaternion.y() = local_position.pose.orientation.y;
-        quaternion.z() = local_position.pose.orientation.z;
-        quaternion.w() = local_position.pose.orientation.w;
 
         //---try to use the offered function but it don't works-------
         // Eigen::Vector3d eulerAngle = quaternion.matrix().eulerAngles(2,1,0); 
-        Eigen::Vector3d eulerAngle = ToEulerAngles(quaternion);
-        // ROS_INFO("attitude is roll=%.3f,pitch=%.3f,yaw=%.3f",eulerAngle[2],eulerAngle[1],eulerAngle[0]);
+        Eigen::Vector3d pv_car_eulerAngle = ToEulerAngles(pv_car_ori_);
+        // ROS_INFO("attitude is roll=%.3f,pitch=%.3f,yaw=%.3f",pv_car_eulerAngle[2],pv_car_eulerAngle[1],pv_car_eulerAngle[0]);
 
         // point to the center of the pv_car and above 3 m
-        set_position_x = pv_car_pos.x - uav_position_offset_x + 1;
-        set_position_y = pv_car_pos.y - uav_position_offset_y + 1;
+        set_position_x = pv_car_pos_.x - uav_position_offset_x + 1.414*cos(M_PI/4 + pv_car_eulerAngle[0]);
+        set_position_y = pv_car_pos_.y - uav_position_offset_y + 1.414*sin(M_PI/4 + pv_car_eulerAngle[0]);
         double dt = (ros::Time::now() - last_time).toSec();
         if (sqrt(pow(position_x - set_position_x,2) + pow(position_y - set_position_y,2)) > 0.2){
-            set_position_z = pv_car_pos.z - uav_position_offset_z + 3;
+            set_position_z = pv_car_pos_.z - uav_position_offset_z + 3;
         }
         else{
             // When the distance error is small then slow down at 0.5m/s
             set_position_z = position_z - 0.5 * dt;
-            // if(fabs(eulerAngle[0])>0.05||fabs(eulerAngle[1]>0.05)){
-            //     if( set_mode_client.call(manual_set_mode) &&
-            //         manual_set_mode.response.mode_sent&&
-            //         arming_client.call(arm_cmd) &&
-            //         arm_cmd.response.success){
-            //         ROS_INFO("Vehicle manual mode and disarmd");
-            //     }
-            // }
-
         }
-        pose.pose.position.x = set_position_x;
-        pose.pose.position.y = set_position_y;
-        pose.pose.position.z = set_position_z;
+        UAV_pose_set.pose.position.x = set_position_x;
+        UAV_pose_set.pose.position.y = set_position_y;
+        UAV_pose_set.pose.position.z = set_position_z;
+
+        UAV_pose_set.pose.orientation.x = pv_car_ori_.x();
+        UAV_pose_set.pose.orientation.y = pv_car_ori_.y();
+        UAV_pose_set.pose.orientation.z = pv_car_ori_.z();
+        UAV_pose_set.pose.orientation.w = pv_car_ori_.w();
         // ROS_INFO("w=%f,\tx=%f,\ty=%f,\tz=%f",local_position.pose.orientation.w,local_position.pose.orientation.x,
         //     local_position.pose.orientation.y,local_position.pose.orientation.z);
 
-        local_pos_pub.publish(pose);
+        local_pos_pub_.publish(UAV_pose_set);
         last_time = ros::Time::now();
         ros::spinOnce();
         rate.sleep();

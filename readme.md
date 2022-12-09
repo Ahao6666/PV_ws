@@ -42,7 +42,7 @@ or
 ## run landing leg node
 ### test landing simualtion
 - `roslaunch px4 mavros_pv_sitl.launch`
-- `rosrun landing_leg landing_leg_control`
+- `rosrun landing_leg landing_leg_controller`
 - `rosrun landing_leg landing_leg_server`
 - `rosrun landing_leg landing_leg_client`
 
