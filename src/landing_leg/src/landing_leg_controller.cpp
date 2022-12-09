@@ -145,11 +145,11 @@ void Joint::jointTrqControl() {
 		pos_err = pos_err - 2 * M_PI;
 	if (pos_err > M_PI)
 		pos_err = pos_err + 2 * M_PI;
-	ROS_INFO("pos_err:  %f,vel_cur:%f",pos_err,vel_cur);
+	// ROS_INFO("pos_err:  %f,vel_cur:%f",pos_err,vel_cur);
 	// control algorithm in one line
 	trq_cmd  = kp * pos_err - kv * vel_cur;
 	// publish the torque message
-	ROS_INFO("trq_cmd:%f", trq_cmd);
+	// ROS_INFO("trq_cmd:%f", trq_cmd);
 	trq_msg.data = trq_cmd;
 	trq_publisher.publish(trq_msg);
 	// send torque command to gazebo

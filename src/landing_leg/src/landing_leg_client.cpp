@@ -142,12 +142,23 @@ int main(int argc, char** argv) {
 		origin_jnts[i] = get_joint_state_srv_msg.response.position[0];
 	}
 
+	// calculate the land leg angles according to pv_car angle [-0.5]rad
+	double pv_car_angle = -0.5;
+	double landing_leg_center_legth = 0.22;
+	double landing_leg_leg_length = 0.22;
+	double temp_angle = asin((landing_leg_center_legth + landing_leg_leg_length)
+						*sin(pv_car_angle)/landing_leg_leg_length);
+	double h = (landing_leg_center_legth/2+landing_leg_leg_length) * sin(pv_car_angle);
+	double angle_joint_1 = 0;
+	double angle_joint_2 = asin(h / landing_leg_leg_length);
+	double angle_joint_3 = temp_angle;
+	double angle_joint_4 = asin(h / landing_leg_leg_length);
 	// assign the start joints and end joints
 	start_jnts = origin_jnts; // start with last joints
-	end_jnts[0] = -M_PI/3; 	// joint1, 
-	end_jnts[1] = -M_PI/3; 	// joint2, 
-	end_jnts[2] = -M_PI/3; 		// joint3, 
-	end_jnts[3] = -M_PI/3; 		// joint4, 
+	end_jnts[0] = angle_joint_1; 	// joint1, 
+	end_jnts[1] = angle_joint_2; 	// joint2, 
+	end_jnts[2] = angle_joint_3; 		// joint3, 
+	end_jnts[3] = angle_joint_4; 		// joint4, 
 
 	// prepare the goal message
 	trajectory.points.clear();
@@ -188,10 +199,10 @@ int main(int argc, char** argv) {
 		origin_jnts[i] = get_joint_state_srv_msg.response.position[0];
 	}
 	start_jnts = origin_jnts;
-	end_jnts[0] = M_PI/3; 	// joint1, 
-	end_jnts[1] = M_PI/3; 	// joint2, 
-	end_jnts[2] = M_PI/3; 		// joint3, 
-	end_jnts[3] = M_PI/3; 		// joint4, 
+	end_jnts[0] = 0; 	// joint1, 
+	end_jnts[1] = 0; 	// joint2, 
+	end_jnts[2] = 0; 		// joint3, 
+	end_jnts[3] = 0; 		// joint4, 
 	// prepare the goal message
 	trajectory.points.clear();
 	for (int i=0; i<time_3+1; i++) { // there are time_3+1 points, including start and end
@@ -218,48 +229,48 @@ int main(int argc, char** argv) {
 	// if here, task 3 is finished successfully
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
-	/////////////////////////////////////
-	// 4.move to the third position.
-	/////////////////////////////////////
+	// /////////////////////////////////////
+	// // 4.move to the third position.
+	// /////////////////////////////////////
 
-	ROS_INFO("task 4.move to the final position.");
+	// ROS_INFO("task 4.move to the final position.");
 
-	origin_jnts.resize(4);
-	for (int i=0; i<4; i++) {
-		get_joint_state_srv_msg.request.joint_name = trajectory.joint_names[i];
-		get_jnt_state_client.call(get_joint_state_srv_msg);
-		origin_jnts[i] = get_joint_state_srv_msg.response.position[0];
-	}
-	start_jnts = origin_jnts;
-	end_jnts[0] = 0; 	// joint1, 
-	end_jnts[1] = 0; 	// joint2, 
-	end_jnts[2] = 0; 	// joint3, 
-	end_jnts[3] = 0; 	// joint4, 
-	// prepare the goal message
-	trajectory.points.clear();
-	for (int i=0; i<time_4+1; i++) { // there are time_4+1 points, including start and end
-		fraction_of_range = (double)i/time_4;
-		for (int j=0; j<4; j++) { // there are 4 joints
-			trajectory_points.positions[j] = start_jnts[j] + (end_jnts[j] - start_jnts[j])*fraction_of_range;
-		}
-		trajectory_points.time_from_start = ros::Duration((double)i);
-		trajectory.points.push_back(trajectory_points);
-	}
-	// copy this trajectory into our action goal
-	goal.trajectory = trajectory;
-	// send out the goal
-	action_client.sendGoal(goal, &doneCb);
-	// wait for expected duration plus some tolerance (2 seconds)
-	finish_before_timeout = action_client.waitForResult(ros::Duration(time_4 + 2.0));
-	if (!finish_before_timeout) {
-		ROS_WARN("task 4 is not done. (timeout)");
-		return 0;
-	}
-	else {
-		ROS_INFO("task 4 is done.");
-	}
-	// if here, task 4 is finished successfully
-	ros::Duration(time_delay).sleep(); // delay before jumping to next task
+	// origin_jnts.resize(4);
+	// for (int i=0; i<4; i++) {
+	// 	get_joint_state_srv_msg.request.joint_name = trajectory.joint_names[i];
+	// 	get_jnt_state_client.call(get_joint_state_srv_msg);
+	// 	origin_jnts[i] = get_joint_state_srv_msg.response.position[0];
+	// }
+	// start_jnts = origin_jnts;
+	// end_jnts[0] = 0; 	// joint1, 
+	// end_jnts[1] = 0; 	// joint2, 
+	// end_jnts[2] = 0; 	// joint3, 
+	// end_jnts[3] = 0; 	// joint4, 
+	// // prepare the goal message
+	// trajectory.points.clear();
+	// for (int i=0; i<time_4+1; i++) { // there are time_4+1 points, including start and end
+	// 	fraction_of_range = (double)i/time_4;
+	// 	for (int j=0; j<4; j++) { // there are 4 joints
+	// 		trajectory_points.positions[j] = start_jnts[j] + (end_jnts[j] - start_jnts[j])*fraction_of_range;
+	// 	}
+	// 	trajectory_points.time_from_start = ros::Duration((double)i);
+	// 	trajectory.points.push_back(trajectory_points);
+	// }
+	// // copy this trajectory into our action goal
+	// goal.trajectory = trajectory;
+	// // send out the goal
+	// action_client.sendGoal(goal, &doneCb);
+	// // wait for expected duration plus some tolerance (2 seconds)
+	// finish_before_timeout = action_client.waitForResult(ros::Duration(time_4 + 2.0));
+	// if (!finish_before_timeout) {
+	// 	ROS_WARN("task 4 is not done. (timeout)");
+	// 	return 0;
+	// }
+	// else {
+	// 	ROS_INFO("task 4 is done.");
+	// }
+	// // if here, task 4 is finished successfully
+	// ros::Duration(time_delay).sleep(); // delay before jumping to next task
 	ROS_INFO("All task is finished!");
 	
 	return 0;
