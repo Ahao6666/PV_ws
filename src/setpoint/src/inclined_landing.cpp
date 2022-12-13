@@ -11,6 +11,7 @@
  *****************************************************************************/
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <mavros_msgs/AttitudeTarget.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
@@ -70,6 +71,9 @@ int main(int argc, char **argv)
     // set UAV local position 
     ros::Publisher local_pos_pub_ = nh_.advertise<geometry_msgs::PoseStamped>
             ("mavros/setpoint_position/local", 10);
+    // attitude setpoint publish
+    ros::Publisher att_tar_pub = nh_.advertise<mavros_msgs::AttitudeTarget>
+            ("mavros/setpoint_raw/attitude", 10);
     // UAV arm state switch
     // ros::ServiceClient arming_client_ = nh_.serviceClient<mavros_msgs::CommandBool>
     //         ("mavros/cmd/arming");
@@ -83,10 +87,20 @@ int main(int argc, char **argv)
 	geometry_msgs::Point pv_car_pos_;    // {float64 x, float64 y, float z}
     Eigen::Quaterniond pv_car_ori_;     // {w,x,y,z}
     geometry_msgs::PoseStamped UAV_pose_set;    // UAV setpoint
+    mavros_msgs::AttitudeTarget att_tar;
+
     // get UAV local position
     double position_x = local_position.pose.position.x;
     double position_y = local_position.pose.position.y;
     double position_z = local_position.pose.position.z;
+    double position_x_last = position_x;
+    double position_y_last = position_y;
+    double position_z_last = position_z;
+
+    // get UAV local velocity
+    double x_vel = 0;
+    double y_vel = 0;
+    double z_vel = 0;
     // set UAV local position set
     double set_position_x = 0;
     double set_position_y = 0;
@@ -129,7 +143,6 @@ int main(int argc, char **argv)
         position_x = local_position.pose.position.x;
         position_y = local_position.pose.position.y;
         position_z = local_position.pose.position.z;
-
         //---try to use the offered function but it don't works-------
         // Eigen::Vector3d eulerAngle = quaternion.matrix().eulerAngles(2,1,0); 
         Eigen::Vector3d pv_car_eulerAngle = ToEulerAngles(pv_car_ori_);
@@ -139,6 +152,7 @@ int main(int argc, char **argv)
         set_position_x = pv_car_pos_.x - uav_position_offset_x + 1.414*cos(M_PI/4 + pv_car_eulerAngle[0]);
         set_position_y = pv_car_pos_.y - uav_position_offset_y + 1.414*sin(M_PI/4 + pv_car_eulerAngle[0]);
         double dt = (ros::Time::now() - last_time).toSec();
+        // when the error is big, then fly to the setpoint
         if (sqrt(pow(position_x - set_position_x,2) + pow(position_y - set_position_y,2)) > 0.2){
             set_position_z = pv_car_pos_.z - uav_position_offset_z + 3;
         }
@@ -156,9 +170,20 @@ int main(int argc, char **argv)
         UAV_pose_set.pose.orientation.w = pv_car_ori_.w();
         // ROS_INFO("w=%f,\tx=%f,\ty=%f,\tz=%f",local_position.pose.orientation.w,local_position.pose.orientation.x,
         //     local_position.pose.orientation.y,local_position.pose.orientation.z);
-
         local_pos_pub_.publish(UAV_pose_set);
         last_time = ros::Time::now();
+        // get UAV local velocity
+        x_vel = (position_x - position_x_last)/dt;
+        y_vel = (position_y - position_y_last)/dt;
+        z_vel = (position_z - position_z_last)/dt;
+        if(sqrt(pow(x_vel,2)+pow(y_vel,2)+pow(z_vel,2)) < 0.05){
+            att_tar.thrust = 0;
+            att_tar_pub.publish(att_tar);
+            ROS_INFO("ready to land!");
+        }
+        position_x_last = position_x;
+        position_y_last = position_y;
+        position_z_last = position_z;
         ros::spinOnce();
         rate.sleep();
     }
