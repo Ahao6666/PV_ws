@@ -44,6 +44,9 @@ or
 - `roslaunch px4 mavros_pv_sitl.launch`
 - `rosrun landing_leg landing_leg_controller`
 - `rosrun landing_leg landing_leg_server`
+
+- `rosrun landing_leg landing_leg_client_init`
+for test the landing leg operation
+
 - `rosrun landing_leg landing_leg_client`
-
-
+for test the incline landing operation
