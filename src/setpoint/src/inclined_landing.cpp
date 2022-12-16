@@ -47,7 +47,9 @@ Eigen::Vector3d ToEulerAngles(Eigen::Quaterniond q) {
     angles(0) = std::atan2(siny_cosp, cosy_cosp);
  
     return angles;
-}// Get vehicle state
+}
+
+// Get vehicle state
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
@@ -177,7 +179,7 @@ int main(int argc, char **argv)
         y_vel = (position_y - position_y_last)/dt;
         z_vel = (position_z - position_z_last)/dt;
         if(sqrt(pow(x_vel,2)+pow(y_vel,2)+pow(z_vel,2)) < 0.05){
-            att_tar.thrust = 0;
+            att_tar.thrust = 0.2;
             att_tar_pub.publish(att_tar);
             ROS_INFO("ready to land!");
         }
@@ -187,6 +189,5 @@ int main(int argc, char **argv)
         ros::spinOnce();
         rate.sleep();
     }
-
     return 0;
 }
