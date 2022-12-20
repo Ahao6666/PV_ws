@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib
   catkin_simple
   roscpp
+  rospy
   std_msgs
   message_generation
   actionlib_msgs
@@ -38,7 +39,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES landing_leg
-  CATKIN_DEPENDS actionlib catkin_simple roscpp
+  CATKIN_DEPENDS actionlib catkin_simple roscpp rospy
 #  DEPENDS system_lib
 )
 
