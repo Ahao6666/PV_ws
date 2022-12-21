@@ -52,6 +52,8 @@ add_executable(landing_leg_kpkv_serviceClient src/kpkv_serviceClient.cpp)
 add_executable(landing_leg_server src/landing_leg_server.cpp)
 add_executable(landing_leg_client src/landing_leg_client.cpp)
 add_executable(landing_leg_client_init src/landing_leg_client_init.cpp)
+add_executable(landing_leg_tcp_client src/landing_leg_tcp_client.cpp)
+add_executable(landing_leg_tcp_server src/landing_leg_tcp_server.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -61,6 +63,8 @@ add_dependencies(landing_leg_kpkv_serviceClient landing_leg_gencpp)
 add_dependencies(landing_leg_server landing_leg_gencpp)
 add_dependencies(landing_leg_client landing_leg_gencpp)
 add_dependencies(landing_leg_client_init landing_leg_gencpp)
+add_dependencies(landing_leg_tcp_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(landing_leg_tcp_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(landing_leg_node
@@ -71,4 +75,6 @@ target_link_libraries(landing_leg_kpkv_serviceClient ${catkin_LIBRARIES})
 target_link_libraries(landing_leg_server ${catkin_LIBRARIES})
 target_link_libraries(landing_leg_client ${catkin_LIBRARIES})
 target_link_libraries(landing_leg_client_init ${catkin_LIBRARIES})
+target_link_libraries(landing_leg_tcp_client ${catkin_LIBRARIES})
+target_link_libraries(landing_leg_tcp_server ${catkin_LIBRARIES})
 
