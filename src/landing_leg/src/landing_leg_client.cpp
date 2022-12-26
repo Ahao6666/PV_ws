@@ -142,22 +142,55 @@ int main(int argc, char** argv) {
 		origin_jnts[i] = get_joint_state_srv_msg.response.position[0];
 	}
 
-	// calculate the land leg angles according to pv_car angle [-0.5]rad
-	double pv_car_angle = -0.5;
-	double center_legth = 0.22;
+	// calculate the land leg angles according to pv_car angle [0.5]rad
+	// 定义无人机以“十字形”降落至斜面上，其中
+	// 上方降落腿为1号，下方降落腿为3号，
+	// 以顺时针顺序，左右两侧降落腿为2和4号
+	// 另外定义降落腿与中心板平行为0度，向下为正方向。
+	double pv_car_angle = 0.5;
+	double center_length = 0.22;
 	double leg_length = 0.22;
-	double temp_angle = asin((center_legth + leg_length)*sin(pv_car_angle)/leg_length);
-	double h = (center_legth/2+leg_length) * sin(pv_car_angle);
-	double angle_joint_1 = 0;
-	double angle_joint_2 = asin(h / leg_length);
-	double angle_joint_3 = pv_car_angle + temp_angle;
-	double angle_joint_4 = asin(h / leg_length);
+	double angle_joint[4] = {0,0,0,0};
+	double temp_angle, h, temp_length;
+	int method = 3;
+	switch(method){
+		// 方法1：1号降落腿与飞机平面平行，降至斜面
+		case 1:
+			temp_angle = asin((leg_length+center_length)*sin(pv_car_angle)/leg_length);
+			angle_joint[0] = 0;
+			angle_joint[2] = temp_angle + pv_car_angle;
+			h = sin(pv_car_angle) * (leg_length + center_length/2);
+			angle_joint[1] = asin(h / leg_length);
+			angle_joint[3] = asin(h / leg_length);
+			break;
+		//方法2：无人机以最低高度降落至斜面
+		case 2:
+			angle_joint[0] = -pv_car_angle;
+			temp_angle = asin(center_length*sin(pv_car_angle)/leg_length);
+			angle_joint[2] = pv_car_angle + temp_angle;
+			h = sin(pv_car_angle) * center_length /2;
+			angle_joint[1] = asin(h / leg_length);
+			angle_joint[3] = asin(h / leg_length);
+			break;
+		//方法3：无人机以最高高度降落至斜面
+		case 3:
+			angle_joint[2] = 1.5708;
+			temp_length = leg_length / tan(pv_car_angle) - center_length;
+			temp_angle = asin(temp_length * sin(pv_car_angle) / leg_length);
+			angle_joint[0] = temp_angle - pv_car_angle;
+			h = sin(pv_car_angle) * (temp_length + center_length/2);
+			angle_joint[1] = asin(h / leg_length);
+			angle_joint[3] = asin(h / leg_length);
+			break;
+		default:
+			ROS_WARN("there are only 3 methods");
+	}
 	// assign the start joints and end joints
 	start_jnts = origin_jnts; // start with last joints
-	end_jnts[0] = angle_joint_1; 	// joint1, 
-	end_jnts[1] = angle_joint_2; 	// joint2, 
-	end_jnts[2] = angle_joint_3; 		// joint3, 
-	end_jnts[3] = angle_joint_4; 		// joint4, 
+	end_jnts[0] = angle_joint[0]; 	// joint1, 
+	end_jnts[1] = angle_joint[1]; 	// joint2, 
+	end_jnts[2] = angle_joint[2]; 		// joint3, 
+	end_jnts[3] = angle_joint[3]; 		// joint4, 
 
 	// prepare the goal message
 	trajectory.points.clear();
