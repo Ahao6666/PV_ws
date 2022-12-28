@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(landing_leg)
 
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -15,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   trajectory_msgs
   gazebo_msgs
 )
+find_package(gazebo REQUIRED)
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -46,6 +49,8 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
 
 add_executable(landing_leg_controller src/landing_leg_controller.cpp)
 add_executable(landing_leg_kpkv_serviceClient src/kpkv_serviceClient.cpp)
@@ -54,6 +59,8 @@ add_executable(landing_leg_client src/landing_leg_client.cpp)
 add_executable(landing_leg_client_init src/landing_leg_client_init.cpp)
 add_executable(landing_leg_tcp_client src/landing_leg_tcp_client.cpp)
 add_executable(landing_leg_tcp_server src/landing_leg_tcp_server.cpp)
+add_executable(force_torque_sensor src/force_torque_sensor.cpp)
+# add_library(force_torque_sensor src/force_torque_sensor.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -65,6 +72,7 @@ add_dependencies(landing_leg_client landing_leg_gencpp)
 add_dependencies(landing_leg_client_init landing_leg_gencpp)
 add_dependencies(landing_leg_tcp_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(landing_leg_tcp_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(force_torque_sensor landing_leg_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(landing_leg_node
@@ -77,4 +85,4 @@ target_link_libraries(landing_leg_client ${catkin_LIBRARIES})
 target_link_libraries(landing_leg_client_init ${catkin_LIBRARIES})
 target_link_libraries(landing_leg_tcp_client ${catkin_LIBRARIES})
 target_link_libraries(landing_leg_tcp_server ${catkin_LIBRARIES})
-
+target_link_libraries(force_torque_sensor ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})

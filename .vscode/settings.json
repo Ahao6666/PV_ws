@@ -85,6 +85,21 @@
         "vec4ui": "cpp",
         "vec4us": "cpp",
         "viewport": "cpp",
-        "drawable": "cpp"
+        "drawable": "cpp",
+        "unordered_set": "cpp",
+        "csignal": "cpp",
+        "any": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp",
+        "codecvt": "cpp",
+        "condition_variable": "cpp",
+        "numeric": "cpp",
+        "random": "cpp",
+        "regex": "cpp",
+        "future": "cpp",
+        "mutex": "cpp",
+        "typeindex": "cpp",
+        "variant": "cpp",
+        "state": "cpp"
     }
 }
