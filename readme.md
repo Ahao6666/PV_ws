@@ -50,3 +50,10 @@ for test the landing leg operation
 
 - `rosrun landing_leg landing_leg_client`
 for test the incline landing operation
+
+## force_torque sensor test
+- `roscore`
+- `cd ~/PX4-Autopilot/Tools/sitl_gazebo/worlds/`
+- `gazebo --verbose force_sensor.world`
+- `rosrun landing_leg force_torque_sensor`
+- `rosrun landing_leg landing_leg_ft_sensor`
