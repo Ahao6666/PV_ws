@@ -14,6 +14,8 @@
 #include <geometry_msgs/WrenchStamped.h>
 #include <ros/ros.h>
 
+ros::Publisher leg_1_FT_Pub,leg_2_FT_Pub,leg_3_FT_Pub,leg_4_FT_Pub;
+
 geometry_msgs::WrenchStamped force_torque[4];
 void Force_Torque_1_cb(ConstWrenchStampedPtr& msg);
 void Force_Torque_2_cb(ConstWrenchStampedPtr& msg);
@@ -38,26 +40,30 @@ int main(int argc, char **argv)
         Subscribe("~/iris_pv/landing_leg/joint3_1/force_torque/wrench",Force_Torque_3_cb);
     gazebo::transport::SubscriberPtr leg_4_sensor = mGazeboNode->
         Subscribe("~/iris_pv/landing_leg/joint4_1/force_torque/wrench",Force_Torque_4_cb);
+    // advertise landing_leg force and torque sensor data
+    leg_1_FT_Pub = nh.advertise<geometry_msgs::WrenchStamped>("leg_1_FT", 10);
+    leg_2_FT_Pub = nh.advertise<geometry_msgs::WrenchStamped>("leg_2_FT", 10);
+    leg_3_FT_Pub = nh.advertise<geometry_msgs::WrenchStamped>("leg_3_FT", 10);
+    leg_4_FT_Pub = nh.advertise<geometry_msgs::WrenchStamped>("leg_4_FT", 10);
+
     ros::Rate rate(10.0);
 
     while(ros::ok()){
-        std::cout<<"leg 1 x force:"<<force_torque[0].wrench.force.x<<std::endl;
-        std::cout<<"leg 2 x force:"<<force_torque[1].wrench.force.x<<std::endl;
-        std::cout<<"leg 3 x force:"<<force_torque[2].wrench.force.x<<std::endl;
-        std::cout<<"leg 4 x force:"<<force_torque[3].wrench.force.x<<std::endl;
-        
+        // std::cout<<"leg 1 x force:"<<force_torque[0].wrench.force.x<<std::endl;
         // ROS_INFO("X force=%.2f,y force=%.2f,z force=%.2f",
         //     force_torque[0].wrench.force.x,
         //     force_torque[0].wrench.force.y,
         //     force_torque[0].wrench.force.z);
         ros::spinOnce();
         rate.sleep();
+
     }
 
     return 0;
 }
 
 void Force_Torque_1_cb(ConstWrenchStampedPtr& msg){
+    // std::cout<<msg->DebugString();
     force_torque[0].header.stamp = ros::Time::now();
     force_torque[0].wrench.force.x = msg->wrench().force().x();
     force_torque[0].wrench.force.y = msg->wrench().force().y();
@@ -65,6 +71,7 @@ void Force_Torque_1_cb(ConstWrenchStampedPtr& msg){
     force_torque[0].wrench.torque.x = msg->wrench().torque().x();
     force_torque[0].wrench.torque.y = msg->wrench().torque().y();
     force_torque[0].wrench.torque.z = msg->wrench().torque().z();
+    leg_1_FT_Pub.publish(force_torque[0]);
 }
 void Force_Torque_2_cb(ConstWrenchStampedPtr& msg){
     force_torque[1].header.stamp = ros::Time::now();
@@ -74,6 +81,8 @@ void Force_Torque_2_cb(ConstWrenchStampedPtr& msg){
     force_torque[1].wrench.torque.x = msg->wrench().torque().x();
     force_torque[1].wrench.torque.y = msg->wrench().torque().y();
     force_torque[1].wrench.torque.z = msg->wrench().torque().z();
+    leg_2_FT_Pub.publish(force_torque[1]);
+
 }
 void Force_Torque_3_cb(ConstWrenchStampedPtr& msg){
     force_torque[2].header.stamp = ros::Time::now();
@@ -83,6 +92,7 @@ void Force_Torque_3_cb(ConstWrenchStampedPtr& msg){
     force_torque[2].wrench.torque.x = msg->wrench().torque().x();
     force_torque[2].wrench.torque.y = msg->wrench().torque().y();
     force_torque[2].wrench.torque.z = msg->wrench().torque().z();
+    leg_3_FT_Pub.publish(force_torque[2]);
 }
 void Force_Torque_4_cb(ConstWrenchStampedPtr& msg){
     force_torque[3].header.stamp = ros::Time::now();
@@ -92,4 +102,5 @@ void Force_Torque_4_cb(ConstWrenchStampedPtr& msg){
     force_torque[3].wrench.torque.x = msg->wrench().torque().x();
     force_torque[3].wrench.torque.y = msg->wrench().torque().y();
     force_torque[3].wrench.torque.z = msg->wrench().torque().z();
+    leg_4_FT_Pub.publish(force_torque[3]);
 }
