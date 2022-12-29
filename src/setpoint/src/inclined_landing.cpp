@@ -11,6 +11,8 @@
  *****************************************************************************/
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Wrench.h>
+#include <geometry_msgs/WrenchStamped.h>
 #include <mavros_msgs/AttitudeTarget.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
@@ -48,7 +50,20 @@ Eigen::Vector3d ToEulerAngles(Eigen::Quaterniond q) {
  
     return angles;
 }
-
+// leg Force and Torque sensor callback function
+geometry_msgs::WrenchStamped leg_ft_sensor[4];
+void leg_1_FT_cb(const geometry_msgs::WrenchStamped::ConstPtr& msg){
+    leg_ft_sensor[0] = *msg;
+}
+void leg_2_FT_cb(const geometry_msgs::WrenchStamped::ConstPtr& msg){
+    leg_ft_sensor[1] = *msg;
+}
+void leg_3_FT_cb(const geometry_msgs::WrenchStamped::ConstPtr& msg){
+    leg_ft_sensor[2] = *msg;
+}
+void leg_4_FT_cb(const geometry_msgs::WrenchStamped::ConstPtr& msg){
+    leg_ft_sensor[3] = *msg;
+}
 // Get vehicle state
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
@@ -64,6 +79,15 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "inclined_landing");
     ros::NodeHandle nh_;
+    // landing_leg callback function
+    ros::Subscriber leg_1_FT_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>
+            ("leg_1_FT", 10, leg_1_FT_cb);
+    ros::Subscriber leg_2_FT_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>
+            ("leg_2_FT", 10, leg_2_FT_cb);
+    ros::Subscriber leg_3_FT_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>
+            ("leg_3_FT", 10, leg_3_FT_cb);
+    ros::Subscriber leg_4_FT_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>
+            ("leg_4_FT", 10, leg_4_FT_cb);
     // vehicle state callback function
     ros::Subscriber state_sub_ = nh_.subscribe<mavros_msgs::State>
             ("mavros/state", 10, state_cb);
@@ -74,14 +98,14 @@ int main(int argc, char **argv)
     ros::Publisher local_pos_pub_ = nh_.advertise<geometry_msgs::PoseStamped>
             ("mavros/setpoint_position/local", 10);
     // attitude setpoint publish
-    ros::Publisher att_tar_pub = nh_.advertise<mavros_msgs::AttitudeTarget>
-            ("mavros/setpoint_raw/attitude", 10);
+    // ros::Publisher att_tar_pub = nh_.advertise<mavros_msgs::AttitudeTarget>
+    //         ("mavros/setpoint_raw/attitude", 10);
     // UAV arm state switch
-    // ros::ServiceClient arming_client_ = nh_.serviceClient<mavros_msgs::CommandBool>
-    //         ("mavros/cmd/arming");
+    ros::ServiceClient arming_client = nh_.serviceClient<mavros_msgs::CommandBool>
+            ("mavros/cmd/arming");
     // vehicle mode set
-    // ros::ServiceClient set_mode_client_ = nh_.serviceClient<mavros_msgs::SetMode>
-    //         ("mavros/set_mode");
+    ros::ServiceClient set_mode_client = nh_.serviceClient<mavros_msgs::SetMode>
+            ("mavros/set_mode");
     // get pv car model state client
     ros::ServiceClient get_model_state_client_ = nh_.serviceClient<gazebo_msgs::GetModelState>(
 		"/gazebo/get_model_state");
@@ -89,8 +113,9 @@ int main(int argc, char **argv)
 	geometry_msgs::Point pv_car_pos_;    // {float64 x, float64 y, float z}
     Eigen::Quaterniond pv_car_ori_;     // {w,x,y,z}
     geometry_msgs::PoseStamped UAV_pose_set;    // UAV setpoint
-    mavros_msgs::AttitudeTarget att_tar;
-
+    // mavros_msgs::AttitudeTarget att_tar;
+    // int all_leg_land_count = 0;
+    bool leg_land_detected[4] = {0, 0, 0, 0};
     // get UAV local position
     double position_x = local_position.pose.position.x;
     double position_y = local_position.pose.position.y;
@@ -99,10 +124,6 @@ int main(int argc, char **argv)
     double position_y_last = position_y;
     double position_z_last = position_z;
 
-    // get UAV local velocity
-    double x_vel = 0;
-    double y_vel = 0;
-    double z_vel = 0;
     // set UAV local position set
     double set_position_x = 0;
     double set_position_y = 0;
@@ -123,12 +144,13 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
-    // mavros_msgs::SetMode manual_set_mode;
-    // manual_set_mode.request.custom_mode = "MANUAL";
-    // mavros_msgs::CommandBool arm_cmd;
-    // arm_cmd.request.value = false;
+    mavros_msgs::SetMode set_mode_manual;
+    set_mode_manual.request.custom_mode = "MANUAL";
+    mavros_msgs::CommandBool disarm_cmd;
+    disarm_cmd.request.value = false;
 
     ros::Time last_time = ros::Time::now();
+    ros::Time last_request = ros::Time::now();
 
     while(ros::ok()){
         //get the 'pv_car' model state from gazebo
@@ -154,12 +176,13 @@ int main(int argc, char **argv)
         set_position_x = pv_car_pos_.x - uav_position_offset_x + 1.414*cos(M_PI/4 + pv_car_eulerAngle[0]);
         set_position_y = pv_car_pos_.y - uav_position_offset_y + 1.414*sin(M_PI/4 + pv_car_eulerAngle[0]);
         double dt = (ros::Time::now() - last_time).toSec();
+        last_time = ros::Time::now();
         // when the error is big, then fly to the setpoint
         if (sqrt(pow(position_x - set_position_x,2) + pow(position_y - set_position_y,2)) > 0.2){
             set_position_z = pv_car_pos_.z - uav_position_offset_z + 3;
         }
         else{
-            // When the distance error is small then slow down at 0.5m/s
+            // When the distance error is small, then slow down at 0.5m/s
             set_position_z = position_z - 0.5 * dt;
         }
         UAV_pose_set.pose.position.x = set_position_x;
@@ -170,19 +193,45 @@ int main(int argc, char **argv)
         UAV_pose_set.pose.orientation.y = pv_car_ori_.y();
         UAV_pose_set.pose.orientation.z = pv_car_ori_.z();
         UAV_pose_set.pose.orientation.w = pv_car_ori_.w();
+        local_pos_pub_.publish(UAV_pose_set);
+
         // ROS_INFO("w=%f,\tx=%f,\ty=%f,\tz=%f",local_position.pose.orientation.w,local_position.pose.orientation.x,
         //     local_position.pose.orientation.y,local_position.pose.orientation.z);
-        local_pos_pub_.publish(UAV_pose_set);
-        last_time = ros::Time::now();
-        // get UAV local velocity
-        x_vel = (position_x - position_x_last)/dt;
-        y_vel = (position_y - position_y_last)/dt;
-        z_vel = (position_z - position_z_last)/dt;
-        if(sqrt(pow(x_vel,2)+pow(y_vel,2)+pow(z_vel,2)) < 0.05){
-            att_tar.thrust = 0.2;
-            att_tar_pub.publish(att_tar);
-            ROS_INFO("ready to land!");
+        // check if all four legs are land contact
+        for(int leg_num=0;leg_num<4;leg_num++){
+            if(abs(leg_ft_sensor[leg_num].wrench.force.x) > 0.5 || 
+                abs(leg_ft_sensor[leg_num].wrench.force.y) > 0.5 ||
+                abs(leg_ft_sensor[leg_num].wrench.force.z) > 0.5)
+                leg_land_detected[leg_num] = true;
+            else
+                leg_land_detected[leg_num] = false;
         }
+        // if four legs are all land contact, then start land process,
+        // Note: we need to set the throttle of joysitck to 0.
+        if(leg_land_detected[0] == true || leg_land_detected[1] == true ||
+            leg_land_detected[2] == true || leg_land_detected[3] == true){
+                // att_tar.thrust = 0.0;
+                // att_tar_pub.publish(att_tar);
+                ROS_INFO("all four legs land detected!");
+                // set the mode to manual instead of offboard
+                if( set_mode_client.call(set_mode_manual) &&
+                    set_mode_manual.response.mode_sent)
+                    ROS_INFO("manual mode enabled");
+                // if rotors are arm, disarm them
+                if( current_state.armed && (ros::Time::now() - last_request > ros::Duration(3.0))){
+                    if( arming_client.call(disarm_cmd) && disarm_cmd.response.success)
+                        ROS_INFO("Vehicle disarmed succeed");
+                    else
+                        ROS_INFO("Vehicle disarmed error");
+                last_request = ros::Time::now();
+            }
+            }
+        else
+            ROS_INFO("not all detected!");
+        // std::cout<<"is landed:"<<all_leg_land_detected<<std::endl;
+
+
+        // ROS_INFO("ready to land!");
         position_x_last = position_x;
         position_y_last = position_y;
         position_z_last = position_z;

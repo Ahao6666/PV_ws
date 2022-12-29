@@ -131,10 +131,10 @@ int main(int argc, char** argv) {
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
 	/////////////////////////////////////////////////
-	// 2.move to the upper position.
+	// 2.move to the lower position.
 	/////////////////////////////////////////////////
 
-	ROS_INFO("task 2.move to the upper position.");
+	ROS_INFO("task 2.move to the lower position.");
 
 	origin_jnts.resize(4);
 	for (int i=0; i<4; i++) {
@@ -177,10 +177,10 @@ int main(int argc, char** argv) {
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
 	/////////////////////////////////////
-	// 3.move to the lower position.
+	// 3.move to the upper position.
 	/////////////////////////////////////
 
-	ROS_INFO("task 3.move to the lower position.");
+	ROS_INFO("task 3.move to the upper position.");
 
 	origin_jnts.resize(4);
 	for (int i=0; i<4; i++) {

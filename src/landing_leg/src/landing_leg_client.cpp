@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
 	double leg_length = 0.22;
 	double angle_joint[4] = {0,0,0,0};
 	double temp_angle, h, temp_length;
-	int method = 3;
+	int method = 2;
 	switch(method){
 		// 方法1：1号降落腿与飞机平面平行，降至斜面
 		case 1:
