@@ -1,0 +1,10 @@
+<launch>
+	<!-- start landing_leg_controller node -->
+	<node pkg="landing_leg" type="landing_leg_controller" name="landing_leg_controller"/>
+	<!-- start landing_leg_server node -->
+	<node pkg="landing_leg" type="landing_leg_server" name="landing_leg_server_node"/>
+	<!-- start landing_leg_client_init node -->
+	<node pkg="landing_leg" type="landing_leg_client_init" name="landing_leg_client_init_node" output="screen"/>
+	<!-- start landing_leg_ft_sensor_node node -->
+	<node pkg="landing_leg" type="landing_leg_ft_sensor" name="landing_leg_ft_sensor_node" output="screen"/>
+</launch>

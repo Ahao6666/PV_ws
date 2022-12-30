@@ -13,6 +13,8 @@ or
 ## open QGC
 - `cd ~/Downloads`
 - `./QGroundControl.AppImage`
+or
+- `QGC` directly
 
 ## run pv_mission mode
 ### run offboard node
@@ -57,3 +59,16 @@ for test the incline landing operation
 - `gazebo --verbose force_sensor.world`
 - `rosrun landing_leg force_torque_sensor`
 - `rosrun landing_leg landing_leg_ft_sensor`
+
+## the whole simualtion precesss is 
+1. start PV simulation
+- `roslaunch pv4 mavros_pv_sitl.launch`
+
+2. open QGroundControl
+- `QGC`
+
+3.  start landing_leg nodes
+- `roslaunch launch_folder landing_leg`
+
+4. start pv_mission node
+- `roslaunch launch_folder pv_mission`

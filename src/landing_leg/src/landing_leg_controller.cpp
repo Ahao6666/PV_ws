@@ -179,7 +179,7 @@ bool Joint::kpkvCallback(landing_leg::kpkv_msgRequest& request, landing_leg::kpk
 }
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "landing_leg_controller");
+    ros::init(argc, argv, "landing_leg_controller_node");
     ros::NodeHandle nh;
 	ros::Duration half_sec(0.5);
 

@@ -24,7 +24,7 @@ void Force_Torque_4_cb(ConstWrenchStampedPtr& msg);
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "landing_leg_ft_sensor");
+    ros::init(argc, argv, "landing_leg_ft_sensor_node");
     ros::NodeHandle nh;
 
     // Load gazebo

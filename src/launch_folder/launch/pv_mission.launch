@@ -1,0 +1,5 @@
+<launch>
+	<!-- start inclined landing node -->
+	<node pkg="pv_mission" type="inclined_landing" name="inclined_landing_node" output="screen"/>
+
+</launch>

@@ -77,7 +77,7 @@ void local_position_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "inclined_landing");
+    ros::init(argc, argv, "inclined_landing_node");
     ros::NodeHandle nh_;
     // landing_leg callback function
     ros::Subscriber leg_1_FT_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>
@@ -120,9 +120,6 @@ int main(int argc, char **argv)
     double position_x = local_position.pose.position.x;
     double position_y = local_position.pose.position.y;
     double position_z = local_position.pose.position.z;
-    double position_x_last = position_x;
-    double position_y_last = position_y;
-    double position_z_last = position_z;
 
     // set UAV local position set
     double set_position_x = 0;
@@ -199,9 +196,9 @@ int main(int argc, char **argv)
         //     local_position.pose.orientation.y,local_position.pose.orientation.z);
         // check if all four legs are land contact
         for(int leg_num=0;leg_num<4;leg_num++){
-            if(abs(leg_ft_sensor[leg_num].wrench.force.x) > 0.5 || 
-                abs(leg_ft_sensor[leg_num].wrench.force.y) > 0.5 ||
-                abs(leg_ft_sensor[leg_num].wrench.force.z) > 0.5)
+            if(abs(leg_ft_sensor[leg_num].wrench.force.x) > 1.0 || 
+                abs(leg_ft_sensor[leg_num].wrench.force.y) > 1.0 ||
+                abs(leg_ft_sensor[leg_num].wrench.force.z) > 1.0)
                 leg_land_detected[leg_num] = true;
             else
                 leg_land_detected[leg_num] = false;
@@ -229,12 +226,6 @@ int main(int argc, char **argv)
         else
             ROS_INFO("not all detected!");
         // std::cout<<"is landed:"<<all_leg_land_detected<<std::endl;
-
-
-        // ROS_INFO("ready to land!");
-        position_x_last = position_x;
-        position_y_last = position_y;
-        position_z_last = position_z;
         ros::spinOnce();
         rate.sleep();
     }
