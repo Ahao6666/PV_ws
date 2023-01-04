@@ -100,7 +100,8 @@
         "mutex": "cpp",
         "typeindex": "cpp",
         "variant": "cpp",
-        "state": "cpp"
+        "state": "cpp",
+        "forward_list": "cpp"
     },
     "python.autoComplete.extraPaths": [
         "/home/ahao/PV_ws/devel/lib/python2.7/dist-packages",
