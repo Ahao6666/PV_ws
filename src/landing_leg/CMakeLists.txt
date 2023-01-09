@@ -24,6 +24,11 @@ add_service_files(
   FILES
   kpkv_msg.srv
 )
+## Generate message in the 'msg' folder
+add_message_files(
+  FILES
+  landing_leg_cmd.msg
+)
 
 ## Generate actions in the 'action' folder
 add_action_files(
@@ -42,10 +47,9 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES landing_leg
-  CATKIN_DEPENDS actionlib catkin_simple roscpp rospy
+  CATKIN_DEPENDS actionlib catkin_simple roscpp rospy std_msgs message_runtime
 #  DEPENDS system_lib
 )
-
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
@@ -62,6 +66,7 @@ add_executable(landing_leg_tcp_server src/landing_leg_tcp_server.cpp)
 add_executable(landing_leg_ft_sensor src/landing_leg_ft_sensor.cpp)
 add_executable(force_torque_sensor src/force_torque_sensor.cpp)
 add_executable(velodyne_distance_sensor src/velodyne_distance_sensor.cpp)
+add_executable(test src/test.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -76,6 +81,7 @@ add_dependencies(landing_leg_tcp_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 add_dependencies(landing_leg_ft_sensor landing_leg_gencpp)
 add_dependencies(force_torque_sensor landing_leg_gencpp)
 add_dependencies(velodyne_distance_sensor landing_leg_gencpp)
+add_dependencies(test landing_leg_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(landing_leg_node
@@ -91,3 +97,4 @@ target_link_libraries(landing_leg_tcp_server ${catkin_LIBRARIES})
 target_link_libraries(landing_leg_ft_sensor ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 target_link_libraries(force_torque_sensor ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 target_link_libraries(velodyne_distance_sensor ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(test ${catkin_LIBRARIES})
