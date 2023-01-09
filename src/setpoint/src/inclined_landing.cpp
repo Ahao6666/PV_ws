@@ -20,13 +20,14 @@
 #include <gazebo_msgs/GetModelState.h>
 #include <cmath>
 #include "Eigen/Eigen"
+#include <sensor_msgs/LaserScan.h>
 
 /**
  * @brief switch the Quaterniond to euler angle
  *
  * @param Quaterniond input Quaterniond data [w,x,y,z]
  *
- * @return Vector3d Euler angle [roll, pitch, yaw]
+ * @return Vector3d Euler angle [yaw, pitch, roll ]
  */
 Eigen::Vector3d ToEulerAngles(Eigen::Quaterniond q) {
     Eigen::Vector3d angles;
@@ -50,6 +51,7 @@ Eigen::Vector3d ToEulerAngles(Eigen::Quaterniond q) {
  
     return angles;
 }
+
 // leg Force and Torque sensor callback function
 geometry_msgs::WrenchStamped leg_ft_sensor[4];
 void leg_1_FT_cb(const geometry_msgs::WrenchStamped::ConstPtr& msg){
@@ -68,6 +70,11 @@ void leg_4_FT_cb(const geometry_msgs::WrenchStamped::ConstPtr& msg){
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
+}
+// get velodyne distance data 
+sensor_msgs::LaserScan velodyne_distance_data;
+void velodyne_distance_cb(const sensor_msgs::LaserScan::ConstPtr& msg){
+    velodyne_distance_data = *msg;
 }
 // Get local position
 geometry_msgs::PoseStamped local_position;
@@ -94,6 +101,9 @@ int main(int argc, char **argv)
     // local position callback function
     ros::Subscriber local_position_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>
             ("mavros/local_position/pose", 10, local_position_cb);
+    // get velodyne distance data callback function
+    ros::Subscriber velodyne_dist_sub_ = nh_.subscribe<sensor_msgs::LaserScan>
+            ("velodyne", 10, velodyne_distance_cb);
     // set UAV local position 
     ros::Publisher local_pos_pub_ = nh_.advertise<geometry_msgs::PoseStamped>
             ("mavros/setpoint_position/local", 10);
@@ -148,7 +158,6 @@ int main(int argc, char **argv)
 
     ros::Time last_time = ros::Time::now();
     ros::Time last_request = ros::Time::now();
-
     while(ros::ok()){
         //get the 'pv_car' model state from gazebo
         get_model_state_srv_msg_.request.model_name = "pv_car";
@@ -196,22 +205,22 @@ int main(int argc, char **argv)
         //     local_position.pose.orientation.y,local_position.pose.orientation.z);
         // check if all four legs are land contact
         for(int leg_num=0;leg_num<4;leg_num++){
-            if(abs(leg_ft_sensor[leg_num].wrench.force.x) > 1.0 || 
-                abs(leg_ft_sensor[leg_num].wrench.force.y) > 1.0 ||
-                abs(leg_ft_sensor[leg_num].wrench.force.z) > 1.0)
-                leg_land_detected[leg_num] = true;
+            if(abs(leg_ft_sensor[leg_num].wrench.force.x) > 0.5 || 
+                abs(leg_ft_sensor[leg_num].wrench.force.y) > 0.5 ||
+                abs(leg_ft_sensor[leg_num].wrench.force.z) > 0.5)
+                    leg_land_detected[leg_num] = true;
             else
                 leg_land_detected[leg_num] = false;
         }
         // if four legs are all land contact, then start land process,
-        // Note: we need to set the throttle of joysitck to 0.
-        if(leg_land_detected[0] == true || leg_land_detected[1] == true ||
-            leg_land_detected[2] == true || leg_land_detected[3] == true){
-                // att_tar.thrust = 0.0;
-                // att_tar_pub.publish(att_tar);
-                ROS_INFO("all four legs land detected!");
-                // set the mode to manual instead of offboard
-                if( set_mode_client.call(set_mode_manual) &&
+                // Note: we need to set the throttle of joysitck to 0.
+        if((leg_land_detected[0] == true || leg_land_detected[1] == true ||
+            leg_land_detected[2] == true || leg_land_detected[3] == true) && 
+            velodyne_distance_data.ranges[0] < 0.15){
+                ROS_INFO("legs are land detected!");
+
+                // set the mode to manual instead of offboard          
+                      if( set_mode_client.call(set_mode_manual) &&
                     set_mode_manual.response.mode_sent)
                     ROS_INFO("manual mode enabled");
                 // if rotors are arm, disarm them
@@ -221,10 +230,11 @@ int main(int argc, char **argv)
                     else
                         ROS_INFO("Vehicle disarmed error");
                 last_request = ros::Time::now();
-            }
-            }
+                }
+                }
         else
-            ROS_INFO("not all detected!");
+            ROS_INFO("legs are not land detected!");
+
         // std::cout<<"is landed:"<<all_leg_land_detected<<std::endl;
         ros::spinOnce();
         rate.sleep();

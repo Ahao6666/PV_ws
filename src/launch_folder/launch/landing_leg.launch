@@ -7,4 +7,6 @@
 	<node pkg="landing_leg" type="landing_leg_client_init" name="landing_leg_client_init_node" output="screen"/>
 	<!-- start landing_leg_ft_sensor_node node -->
 	<node pkg="landing_leg" type="landing_leg_ft_sensor" name="landing_leg_ft_sensor_node" output="screen"/>
+	<!-- start velodyne_distance_sensor node -->
+	<node pkg="landing_leg" type="velodyne_distance_sensor" name="velodyne_distance_sensor_node" output="screen"/>
 </launch>

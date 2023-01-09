@@ -101,7 +101,8 @@
         "typeindex": "cpp",
         "variant": "cpp",
         "state": "cpp",
-        "forward_list": "cpp"
+        "forward_list": "cpp",
+        "geometry": "cpp"
     },
     "python.autoComplete.extraPaths": [
         "/home/ahao/PV_ws/devel/lib/python2.7/dist-packages",

@@ -12,11 +12,12 @@
 #include <gazebo/transport/transport.hh>
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
+
 ros::Publisher mRosPub;
 sensor_msgs::LaserScan Velodyne_distance_data;
 void Velodyne_distance_cb(ConstLaserScanStampedPtr & msg)
 {
-    std::cout << msg->DebugString();
+    // std::cout << msg->DebugString();
     Velodyne_distance_data.header.stamp = ros::Time(msg->time().sec(),msg->time().nsec());
     Velodyne_distance_data.header.frame_id = "velodyne";
     Velodyne_distance_data.angle_min = msg->scan().angle_min();

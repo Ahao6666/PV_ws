@@ -70,10 +70,10 @@ int main(int argc, char** argv) {
 
 	// parameters for flow control, time assignment
 	double dt_sample = 1.0; // really coarse, let action server to interpolate
-	int time_1 = 3; // time for task 1
-	int time_2 = 3; // time for task 2
-	int time_3 = 3; // time for task 3
-	int time_4 = 3; // time for task 4
+	int time_1 = 2; // time for task 1
+	int time_2 = 2; // time for task 2
+	int time_3 = 2; // time for task 3
+	int time_4 = 2; // time for task 4
 	double time_delay = 1.0; // delay between every task
 	std::vector<double> start_jnts; // start joints for each move task
 	std::vector<double> end_jnts; // end joints for each move task
