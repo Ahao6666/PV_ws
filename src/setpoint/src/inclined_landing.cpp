@@ -19,8 +19,9 @@
 #include <mavros_msgs/State.h>
 #include <gazebo_msgs/GetModelState.h>
 #include <cmath>
-#include "Eigen/Eigen"
+#include <Eigen/Eigen>
 #include <sensor_msgs/LaserScan.h>
+#include "landing_leg/landing_leg_cmd.h"
 
 /**
  * @brief switch the Quaterniond to euler angle
@@ -107,6 +108,9 @@ int main(int argc, char **argv)
     // set UAV local position 
     ros::Publisher local_pos_pub_ = nh_.advertise<geometry_msgs::PoseStamped>
             ("mavros/setpoint_position/local", 10);
+    // landing leg command publish
+    ros::Publisher landing_leg_cmd_pub = nh_.advertise<landing_leg::landing_leg_cmd>
+            ("landing_leg_cmd", 10);
     // attitude setpoint publish
     // ros::Publisher att_tar_pub = nh_.advertise<mavros_msgs::AttitudeTarget>
     //         ("mavros/setpoint_raw/attitude", 10);
@@ -150,11 +154,14 @@ int main(int argc, char **argv)
         ros::spinOnce();
         rate.sleep();
     }
-
+    // manual mode and disarm command
     mavros_msgs::SetMode set_mode_manual;
     set_mode_manual.request.custom_mode = "MANUAL";
     mavros_msgs::CommandBool disarm_cmd;
     disarm_cmd.request.value = false;
+
+    // landing leg command 
+    landing_leg::landing_leg_cmd landing_leg_cmd_;
 
     ros::Time last_time = ros::Time::now();
     ros::Time last_request = ros::Time::now();
@@ -201,6 +208,66 @@ int main(int argc, char **argv)
         UAV_pose_set.pose.orientation.w = pv_car_ori_.w();
         local_pos_pub_.publish(UAV_pose_set);
 
+        // landing_leg is off when the altitude of UAV is higher than 0.5m
+        if(current_state.mode == "OFFBOARD"){
+            if(local_position.pose.position.z < 0.5 ){
+                landing_leg_cmd_.landing_leg_1_cmd = 0.0f;
+                landing_leg_cmd_.landing_leg_2_cmd = 0.0f;
+                landing_leg_cmd_.landing_leg_3_cmd = 0.0f;
+                landing_leg_cmd_.landing_leg_4_cmd = 0.0f;
+            }
+            else{
+                // calculate the land leg angles according to pv_car angle [0.5]rad
+                // 定义无人机以“十字形”降落至斜面上，其中
+                // 上方降落腿为1号，下方降落腿为3号，
+                // 以顺时针顺序，左右两侧降落腿为2和4号
+                // 另外定义降落腿与中心板平行为0度，向下为正方向。
+                double pv_car_angle = 0.5;
+                double center_length = 0.22;
+                double leg_length = 0.22;
+                double temp_angle, h, temp_length;
+                int method = 2;
+                switch(method){
+                // 方法1：1号降落腿与飞机平面平行，降至斜面
+                case 1:
+                    temp_angle = asin((leg_length+center_length)*sin(pv_car_angle)/leg_length);
+                    landing_leg_cmd_.landing_leg_1_cmd = 0;
+                    landing_leg_cmd_.landing_leg_3_cmd = temp_angle + pv_car_angle;
+                    h = sin(pv_car_angle) * (leg_length + center_length/2);
+                    landing_leg_cmd_.landing_leg_2_cmd = asin(h / leg_length);
+                    landing_leg_cmd_.landing_leg_4_cmd = asin(h / leg_length);
+                    break;
+                //方法2：无人机以最低高度降落至斜面
+                case 2:
+                    landing_leg_cmd_.landing_leg_1_cmd = -pv_car_angle;
+                    temp_angle = asin(center_length*sin(pv_car_angle)/leg_length);
+                    landing_leg_cmd_.landing_leg_3_cmd = pv_car_angle + temp_angle;
+                    h = sin(pv_car_angle) * center_length /2;
+                    landing_leg_cmd_.landing_leg_2_cmd = asin(h / leg_length);
+                    landing_leg_cmd_.landing_leg_4_cmd = asin(h / leg_length);
+                    break;
+                //方法3：无人机以最高高度降落至斜面
+                case 3:
+                    landing_leg_cmd_.landing_leg_3_cmd = 1.5708;
+                    temp_length = leg_length / tan(pv_car_angle) - center_length;
+                    temp_angle = asin(temp_length * sin(pv_car_angle) / leg_length);
+                    landing_leg_cmd_.landing_leg_1_cmd = temp_angle - pv_car_angle;
+                    h = sin(pv_car_angle) * (temp_length + center_length/2);
+                    landing_leg_cmd_.landing_leg_2_cmd = asin(h / leg_length);
+                    landing_leg_cmd_.landing_leg_4_cmd = asin(h / leg_length);
+                    break;
+                default:
+                    ROS_WARN("there are only 3 methods");
+                }
+            }
+        }
+        else{
+            landing_leg_cmd_.landing_leg_1_cmd = 0.0f;
+            landing_leg_cmd_.landing_leg_2_cmd = 0.0f;
+            landing_leg_cmd_.landing_leg_3_cmd = 0.0f;
+            landing_leg_cmd_.landing_leg_4_cmd = 0.0f;
+        }
+        landing_leg_cmd_pub.publish(landing_leg_cmd_);
         // ROS_INFO("w=%f,\tx=%f,\ty=%f,\tz=%f",local_position.pose.orientation.w,local_position.pose.orientation.x,
         //     local_position.pose.orientation.y,local_position.pose.orientation.z);
         // check if all four legs are land contact
@@ -218,11 +285,10 @@ int main(int argc, char **argv)
             leg_land_detected[2] == true || leg_land_detected[3] == true) && 
             velodyne_distance_data.ranges[0] < 0.15){
                 ROS_INFO("legs are land detected!");
-
                 // set the mode to manual instead of offboard          
-                      if( set_mode_client.call(set_mode_manual) &&
+                if( set_mode_client.call(set_mode_manual) &&
                     set_mode_manual.response.mode_sent)
-                    ROS_INFO("manual mode enabled");
+                        ROS_INFO("manual mode enabled");
                 // if rotors are arm, disarm them
                 if( current_state.armed && (ros::Time::now() - last_request > ros::Duration(3.0))){
                     if( arming_client.call(disarm_cmd) && disarm_cmd.response.success)
@@ -231,7 +297,7 @@ int main(int argc, char **argv)
                         ROS_INFO("Vehicle disarmed error");
                 last_request = ros::Time::now();
                 }
-                }
+            }
         else
             ROS_INFO("legs are not land detected!");
 

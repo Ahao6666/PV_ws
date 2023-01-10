@@ -18,6 +18,8 @@
 #include <gazebo_msgs/GetJointProperties.h>
 #include <gazebo_msgs/GetModelState.h>
 #include <geometry_msgs/Point.h>
+#include "landing_leg/landing_leg_cmd.h"
+
 // #include <sensors/sensors.hh>
 
 // callback to get "result" message from action server
@@ -26,11 +28,18 @@ void doneCb(const actionlib::SimpleClientGoalState& state,
 	ROS_INFO("doneCb: server responded with state [%s]", state.toString().c_str());
 }
 
+landing_leg::landing_leg_cmd landing_leg_cmd_;
+void landing_leg_cmd_cb(const landing_leg::landing_leg_cmd::ConstPtr& msg){
+    landing_leg_cmd_ = *msg;
+}
+
 // trajectory action client for the gripper robot
 int main(int argc, char** argv) {
 	ros::init(argc, argv, "landing_leg_client_node");
 	ros::NodeHandle nh;
 
+    ros::Subscriber state_sub = nh.subscribe<landing_leg::landing_leg_cmd>
+            ("landing_leg_cmd", 10, landing_leg_cmd_cb);
 	// initialize an action client
 	actionlib::SimpleActionClient<landing_leg::trajAction> action_client(
 		"landing_leg", true);
@@ -68,10 +77,7 @@ int main(int argc, char** argv) {
 	gazebo_msgs::GetModelState get_model_state_srv_msg;
 
 	// parameters for flow control, time assignment
-	double dt_sample = 1.0; // really coarse, let action server to interpolate
-	int time_1 = 2; // time for task 1
-	int time_2 = 2; // time for task 2
-	double time_delay = 1.0; // delay between every task
+	int time = 2; // time for task
 	std::vector<double> start_jnts; // start joints for each move task
 	std::vector<double> end_jnts; // end joints for each move task
 	double fraction_of_range;
@@ -79,143 +85,54 @@ int main(int argc, char** argv) {
 	start_jnts.resize(4);
 	end_jnts.resize(4);
 
-	///////////////////////////////////////
-	// task 1.move to the first position.
-	///////////////////////////////////////
+    ros::Rate rate(10.0);
 
-	ROS_INFO("task 1.landing legs move to the initial position.");
+    while(ros::ok()){
 
-	// get the original joint positions when this node is invoked
-	std::vector<double> origin_jnts;
-	origin_jnts.resize(4);
-	for (int i=0; i<4; i++) {
-		get_joint_state_srv_msg.request.joint_name = trajectory.joint_names[i];
-		get_jnt_state_client.call(get_joint_state_srv_msg);
-		origin_jnts[i] = get_joint_state_srv_msg.response.position[0];
-	}
-	// assign current joints to start joints
-	start_jnts = origin_jnts;
+		ROS_INFO("get landing_leg command and move");
 
-	end_jnts[0] = 0; // joint1, 
-	end_jnts[1] = 0; // joint2, 
-	end_jnts[2] = 0; // joint3, 
-	end_jnts[3] = 0; // joint4, 
-
-	// prepare the goal message
-	trajectory.points.clear();
-	for (int i=0; i<time_1+1; i++) { // there are time_1+1 points, including start and end
-		fraction_of_range = (double)i/time_1; // cautious, convert to double
-		for (int j=0; j<4; j++) { // there are 4 joints
-			trajectory_points.positions[j] = start_jnts[j] + (end_jnts[j] - start_jnts[j])*fraction_of_range;
+		// get the original joint positions when this node is invoked
+		std::vector<double> origin_jnts;
+		origin_jnts.resize(4);
+		for (int i=0; i<4; i++) {
+			get_joint_state_srv_msg.request.joint_name = trajectory.joint_names[i];
+			get_jnt_state_client.call(get_joint_state_srv_msg);
+			origin_jnts[i] = get_joint_state_srv_msg.response.position[0];
 		}
-		trajectory_points.time_from_start = ros::Duration((double)i);
-		trajectory.points.push_back(trajectory_points);
-	}
-	// copy this trajectory into our action goal
-	goal.trajectory = trajectory;
-	// send out the goal
-	action_client.sendGoal(goal, &doneCb);
-	// wait for expected duration plus some tolerance (2 seconds)
-	finish_before_timeout = action_client.waitForResult(ros::Duration(time_1 + 2.0));
-	if (!finish_before_timeout) {
-		ROS_WARN("task 1 is not done. (timeout)");
-		return 0;
-	}
-	else {
-		ROS_INFO("task 1 is done.");
-	}
-	// if here, task 1 is finished successfully
-	ros::Duration(time_delay).sleep(); // delay before jumping to next task
+		// assign current joints to start joints
+		start_jnts = origin_jnts;
 
-	/////////////////////////////////////////////////
-	// task 2.landing legs adjust according to the angle of pv_car.
-	/////////////////////////////////////////////////
+		end_jnts[0] = landing_leg_cmd_.landing_leg_1_cmd; // joint1, 
+		end_jnts[1] = landing_leg_cmd_.landing_leg_2_cmd; // joint2, 
+		end_jnts[2] = landing_leg_cmd_.landing_leg_3_cmd; // joint3, 
+		end_jnts[3] = landing_leg_cmd_.landing_leg_4_cmd; // joint4, 
 
-	ROS_INFO("task 2.landing legs adjust according to the angle of pv_car.");
-
-	origin_jnts.resize(4);
-	for (int i=0; i<4; i++) {
-		get_joint_state_srv_msg.request.joint_name = trajectory.joint_names[i];
-		get_jnt_state_client.call(get_joint_state_srv_msg);
-		origin_jnts[i] = get_joint_state_srv_msg.response.position[0];
-	}
-
-	// calculate the land leg angles according to pv_car angle [0.5]rad
-	// 定义无人机以“十字形”降落至斜面上，其中
-	// 上方降落腿为1号，下方降落腿为3号，
-	// 以顺时针顺序，左右两侧降落腿为2和4号
-	// 另外定义降落腿与中心板平行为0度，向下为正方向。
-	double pv_car_angle = 0.5;
-	double center_length = 0.22;
-	double leg_length = 0.22;
-	double angle_joint[4] = {0,0,0,0};
-	double temp_angle, h, temp_length;
-	int method = 2;
-	switch(method){
-		// 方法1：1号降落腿与飞机平面平行，降至斜面
-		case 1:
-			temp_angle = asin((leg_length+center_length)*sin(pv_car_angle)/leg_length);
-			angle_joint[0] = 0;
-			angle_joint[2] = temp_angle + pv_car_angle;
-			h = sin(pv_car_angle) * (leg_length + center_length/2);
-			angle_joint[1] = asin(h / leg_length);
-			angle_joint[3] = asin(h / leg_length);
-			break;
-		//方法2：无人机以最低高度降落至斜面
-		case 2:
-			angle_joint[0] = -pv_car_angle;
-			temp_angle = asin(center_length*sin(pv_car_angle)/leg_length);
-			angle_joint[2] = pv_car_angle + temp_angle;
-			h = sin(pv_car_angle) * center_length /2;
-			angle_joint[1] = asin(h / leg_length);
-			angle_joint[3] = asin(h / leg_length);
-			break;
-		//方法3：无人机以最高高度降落至斜面
-		case 3:
-			angle_joint[2] = 1.5708;
-			temp_length = leg_length / tan(pv_car_angle) - center_length;
-			temp_angle = asin(temp_length * sin(pv_car_angle) / leg_length);
-			angle_joint[0] = temp_angle - pv_car_angle;
-			h = sin(pv_car_angle) * (temp_length + center_length/2);
-			angle_joint[1] = asin(h / leg_length);
-			angle_joint[3] = asin(h / leg_length);
-			break;
-		default:
-			ROS_WARN("there are only 3 methods");
-	}
-	// assign the start joints and end joints
-	start_jnts = origin_jnts; // start with last joints
-	end_jnts[0] = angle_joint[0]; 	// joint1, 
-	end_jnts[1] = angle_joint[1]; 	// joint2, 
-	end_jnts[2] = angle_joint[2]; 		// joint3, 
-	end_jnts[3] = angle_joint[3]; 		// joint4, 
-
-	// prepare the goal message
-	trajectory.points.clear();
-	for (int i=0; i<time_2+1; i++) { // there are time_2+1 points, including start and end
-		fraction_of_range = (double)i/time_2;
-		for (int j=0; j<4; j++) { // there are 4 joints
-			trajectory_points.positions[j] = start_jnts[j] + (end_jnts[j] - start_jnts[j])*fraction_of_range;
+		// prepare the goal message
+		trajectory.points.clear();
+		for (int i=0; i<time+1; i++) { // there are time+1 points, including start and end
+			fraction_of_range = (double)i/time; // cautious, convert to double
+			for (int j=0; j<4; j++) { // there are 4 joints
+				trajectory_points.positions[j] = start_jnts[j] + (end_jnts[j] - start_jnts[j])*fraction_of_range;
+			}
+			trajectory_points.time_from_start = ros::Duration((double)i);
+			trajectory.points.push_back(trajectory_points);
 		}
-		trajectory_points.time_from_start = ros::Duration((double)i);
-		trajectory.points.push_back(trajectory_points);
-	}
-	// copy this trajectory into our action goal
-	goal.trajectory = trajectory;
-	// send out the goal
-	action_client.sendGoal(goal, &doneCb);
-	// wait for expected duration plus some tolerance (2 seconds)
-	finish_before_timeout = action_client.waitForResult(ros::Duration(time_2 + 2.0));
-	if (!finish_before_timeout) {
-		ROS_WARN("task 2 is not done. (timeout)");
-		return 0;
-	}
-	else {
-		ROS_INFO("task 2 is done.");
-	}
-	// if here, task 2 is finished successfully
-	ros::Duration(time_delay).sleep(); // delay before jumping to next task
-	
+		// copy this trajectory into our action goal
+		goal.trajectory = trajectory;
+		// send out the goal
+		action_client.sendGoal(goal, &doneCb);
+		// wait for expected duration plus some tolerance (2 seconds)
+		finish_before_timeout = action_client.waitForResult(ros::Duration(time + 2.0));
+		if (!finish_before_timeout) {
+			ROS_WARN("task is failed.");
+			return 0;
+		}
+		else {
+			ROS_INFO("task is done.");
+		}
+        ros::spinOnce();
+        rate.sleep();
+
+    }
 	return 0;
 }
-
