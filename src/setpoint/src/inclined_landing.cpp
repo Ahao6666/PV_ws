@@ -104,7 +104,7 @@ int main(int argc, char **argv)
             ("mavros/local_position/pose", 10, local_position_cb);
     // get velodyne distance data callback function
     ros::Subscriber velodyne_dist_sub_ = nh_.subscribe<sensor_msgs::LaserScan>
-            ("velodyne", 10, velodyne_distance_cb);
+            ("/mavros/distance_sensor/hrlv_ez4_pub", 10, velodyne_distance_cb);
     // set UAV local position 
     ros::Publisher local_pos_pub_ = nh_.advertise<geometry_msgs::PoseStamped>
             ("mavros/setpoint_position/local", 10);
@@ -301,7 +301,7 @@ int main(int argc, char **argv)
         else
             ROS_INFO("legs are not land detected!");
 
-        // std::cout<<"is landed:"<<all_leg_land_detected<<std::endl;
+        std::cout<<"velodyne_distance_data:"<<velodyne_distance_data.ranges[0]<<std::endl;
         ros::spinOnce();
         rate.sleep();
     }
