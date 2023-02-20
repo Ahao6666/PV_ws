@@ -66,6 +66,7 @@ add_executable(landing_leg_tcp_server src/landing_leg_tcp_server.cpp)
 add_executable(landing_leg_ft_sensor src/landing_leg_ft_sensor.cpp)
 add_executable(force_torque_sensor src/force_torque_sensor.cpp)
 add_executable(velodyne_distance_sensor src/velodyne_distance_sensor.cpp)
+add_executable(pv_car_pose_pub src/pv_car_pose_pub.cpp)
 add_executable(test src/test.cpp)
 
 ## Add cmake target dependencies of the executable
@@ -81,6 +82,7 @@ add_dependencies(landing_leg_tcp_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 add_dependencies(landing_leg_ft_sensor landing_leg_gencpp)
 add_dependencies(force_torque_sensor landing_leg_gencpp)
 add_dependencies(velodyne_distance_sensor landing_leg_gencpp)
+add_dependencies(pv_car_pose_pub landing_leg_gencpp)
 add_dependencies(test landing_leg_gencpp)
 
 ## Specify libraries to link a library or executable target against
@@ -97,4 +99,5 @@ target_link_libraries(landing_leg_tcp_server ${catkin_LIBRARIES})
 target_link_libraries(landing_leg_ft_sensor ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 target_link_libraries(force_torque_sensor ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 target_link_libraries(velodyne_distance_sensor ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(pv_car_pose_pub ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 target_link_libraries(test ${catkin_LIBRARIES})

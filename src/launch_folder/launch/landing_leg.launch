@@ -11,4 +11,6 @@
 	<node pkg="landing_leg" type="landing_leg_ft_sensor" name="landing_leg_ft_sensor_node" output="screen"/>
 	<!-- start velodyne_distance_sensor node -->
 	<node pkg="landing_leg" type="velodyne_distance_sensor" name="velodyne_distance_sensor_node" output="screen"/>
+	<!-- start pv_car_pose_pub node -->
+	<node pkg="landing_leg" type="pv_car_pose_pub" name="pv_car_pose_pub_node" output="screen"/>
 </launch>
