@@ -32,7 +32,7 @@ void dist_scan_cb(const sensor_msgs::LaserScan::ConstPtr& msg){
 }
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "offb_node");
+    ros::init(argc, argv, "offboard_node_node");
     ros::NodeHandle nh_;
 
     ros::Subscriber state_sub = nh_.subscribe<mavros_msgs::State>

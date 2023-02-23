@@ -15,7 +15,7 @@
 
 //	set the Kp and Kd parameters for the joint controller
 int main(int argc, char **argv) {
-	ros::init(argc, argv, "kpkv_serviceClient");
+	ros::init(argc, argv, "kpkv_serviceClient_node");
 	ros::NodeHandle nh;
 	ros::ServiceClient client;
 	landing_leg::kpkv_msg srv;

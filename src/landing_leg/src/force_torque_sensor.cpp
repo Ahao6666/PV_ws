@@ -30,7 +30,7 @@ void Force_Torque_cb(ConstWrenchStampedPtr& msg)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "force_torque_sensor");
+    ros::init(argc, argv, "force_torque_sensor_node");
     ros::NodeHandle nh;
 
     // Load gazebo

@@ -31,7 +31,7 @@ void local_position_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "actuator_ctrl");
+    ros::init(argc, argv, "att_setpoint_node");
     ros::NodeHandle nh;
     // vehicle state callback function
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>

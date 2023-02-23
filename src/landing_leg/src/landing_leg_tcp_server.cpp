@@ -22,7 +22,7 @@ void local_position_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 int main (int argc, char** argv)
 {
     
-	ros::init(argc, argv, "server_node");
+	ros::init(argc, argv, "landing_leg_tcp_server_node");
 	ros::NodeHandle nh;
 
     // local position callback function

@@ -71,4 +71,10 @@ for test the incline landing operation
 - `roslaunch launch_folder landing_leg`
 
 4. start pv_mission node
-- `roslaunch launch_folder pv_mission`
+- `roslaunch launch_folder pv_mission`  
+
+5. start tcp test  
+- under python folder, after `roscore`;  
+- `python3 tcp_test_Server.py`;  
+- `python3 tcp_test_Publisher.py`;  
+- `python3 tcp_test_Client.py`  

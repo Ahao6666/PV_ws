@@ -24,7 +24,7 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "actuator_ctrl");
+    ros::init(argc, argv, "actuator_ctrl_node");
     ros::NodeHandle nh;
     // vehicle state callback function
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>

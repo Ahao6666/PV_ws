@@ -18,7 +18,7 @@
 
 // trajectory action client for the gripper robot
 int main(int argc, char** argv) {
-	ros::init(argc, argv, "landing_leg_cmd");
+	ros::init(argc, argv, "test_node");
 	ros::NodeHandle nh;
 
     // // vehicle state callback function

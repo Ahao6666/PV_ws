@@ -20,7 +20,7 @@ using namespace std;
  
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "client_node");
+	ros::init(argc, argv, "landing_leg_tcp_client_node");
 	ros::NodeHandle n;
 	
 	char recvbuf[BUF_SIZE];
