@@ -74,10 +74,6 @@ for test the incline landing operation
 - `roslaunch launch_folder pv_mission`  
 
 5. start tcp test  
-- under python folder, after `roscore`;  
-- `python3 tcp_test_Server.py`;  
-- `python3 tcp_test_Publisher.py`;  
-- `python3 tcp_test_Client.py`  
-or   
-- `rosrun landing_leg landing_leg_tcp_server`  
-- `rosrun landing_leg landing_leg_tcp_client`
+- under python folder, after `roscore`;    
+- `rosrun landing_leg landing_leg_tcp_client`  
+- note: ip Address and port need to check

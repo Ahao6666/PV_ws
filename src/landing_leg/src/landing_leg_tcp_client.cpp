@@ -10,21 +10,18 @@
 #include <fcntl.h>
 #include <sys/shm.h>
 #include <std_msgs/String.h>
+using namespace std;
 
 #define    MYPORT     1234   //端口号
 #define    BUF_SIZE   1024   //数据缓冲区最大长度
- 
-char* SERVER_IP = "192.168.4.74";
-// int result = 0;
- 
-using namespace std;
- 
+char* SERVER_IP = "192.168.50.133"; //for wifi IUSL-24, need to check
+
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "landing_leg_tcp_client_node");
 	ros::NodeHandle n;
-    ros::Publisher robot_flag_publish   = n.advertise<std_msgs::String>("robot1_flag", 1);
-
+    ros::Publisher robot_flag_publish   = n.advertise<std_msgs::String>("landing_tcp_cmd", 1);
 
     /*
     *@fuc: socket()创建套节字
@@ -55,29 +52,31 @@ int main(int argc, char **argv)
         std::cout << "connect error" << std::endl;
         exit(0);
     }
-	// char recvbuf[BUF_SIZE];
-    std_msgs::String data;
-    ros::Rate rate(2.0);
+    else
+        std::cout << "connect ok" << std::endl;
 
+    std_msgs::String ros_data;
+    ros::Rate rate(2.0);
+    /*
+        buff_send[0]: start point (a)
+        buff_send[1]: land mode(1-3): 1 for 斜面起降, 2 for 斜面紧贴, 3 for 平面起降
+        buff_send[2]: speed control(1-9) 1 for lowest and 9 for fastest
+        buff_send[3]: end point(b)
+    */
+    char buff_send[5] = "a11b";     //default send_data
     while(ros::ok)
 	{
-        std::cout << "connect ok" << std::endl << data << std::endl;
-        data.data = "11112222" ;
-        robot_flag_publish.publish(data);
-		
-		/*
-		 *@fuc: 使用recv()函数来接收服务器发送的消息
-		 */
-		// recv(socket_cli, recvbuf, sizeof(recvbuf), 0);
-		// printf("server message: %s\n", recvbuf);
-        /*
-        *@fuc: 关闭连接
-        */
+        buff_send[1] = '2';
+        buff_send[2] = '5';
+        ros_data.data = buff_send ;
+        // ros publish
+        robot_flag_publish.publish(ros_data);
+        // tcp send
+		send(socket_cli, buff_send, strlen(buff_send),0);
 
         ros::spinOnce();
         rate.sleep();
         // close(socket_cli);
 	}
-
 	return 0;
 }
