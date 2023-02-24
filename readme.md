@@ -78,3 +78,6 @@ for test the incline landing operation
 - `python3 tcp_test_Server.py`;  
 - `python3 tcp_test_Publisher.py`;  
 - `python3 tcp_test_Client.py`  
+or   
+- `rosrun landing_leg landing_leg_tcp_server`  
+- `rosrun landing_leg landing_leg_tcp_client`
