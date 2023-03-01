@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
 
     while(ros::ok()){
 
-		ROS_INFO("get landing_leg command and move");
+		// ROS_INFO("get landing_leg command and move");
 
 		// get the original joint positions when this node is invoked
 		std::vector<double> origin_jnts;

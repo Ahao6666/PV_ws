@@ -12,21 +12,20 @@
 #include <gazebo/transport/transport.hh>
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/Range.h>
 
 ros::Publisher mRosPub;
-sensor_msgs::LaserScan Velodyne_distance_data;
+sensor_msgs::Range Range_distance_data;
 void Velodyne_distance_cb(ConstLaserScanStampedPtr & msg)
 {
     // std::cout << msg->DebugString();
-    Velodyne_distance_data.header.stamp = ros::Time(msg->time().sec(),msg->time().nsec());
-    Velodyne_distance_data.header.frame_id = "velodyne";
-    Velodyne_distance_data.angle_min = msg->scan().angle_min();
-    Velodyne_distance_data.angle_max = msg->scan().angle_max();
+    Range_distance_data.header.stamp = ros::Time(msg->time().sec(),msg->time().nsec());
+    Range_distance_data.header.frame_id = "velodyne";
+    Range_distance_data.min_range = 0.0;
+    Range_distance_data.max_range = 4.0;
     //only distance so read the first data
-    Velodyne_distance_data.ranges.push_back(msg->scan().ranges(0));
-    mRosPub.publish(Velodyne_distance_data);
-    // after read data clear the vector
-    Velodyne_distance_data.ranges.clear();
+    Range_distance_data.range = msg->scan().ranges(0);
+    mRosPub.publish(Range_distance_data);
 }
 
 int main(int argc, char **argv)

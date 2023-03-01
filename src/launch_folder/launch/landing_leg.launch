@@ -4,9 +4,9 @@
 	<!-- start landing_leg_server node -->
 	<node pkg="landing_leg" type="landing_leg_server" name="landing_leg_server_node"/>
 	<!-- start landing_leg_client_init node -->
-	<node pkg="landing_leg" type="landing_leg_client_init" name="landing_leg_client_init_node"/>
+	<!-- <node pkg="landing_leg" type="landing_leg_client_init" name="landing_leg_client_init_node"/> -->
 	<!-- start landing_leg_client node -->
-	<node pkg="landing_leg" type="landing_leg_client" name="landing_leg_client_node" output="screen"/>
+	<node pkg="landing_leg" type="landing_leg_client" name="landing_leg_client_node" />
 	<!-- start landing_leg_ft_sensor_node node -->
 	<node pkg="landing_leg" type="landing_leg_ft_sensor" name="landing_leg_ft_sensor_node" output="screen"/>
 	<!-- start velodyne_distance_sensor node -->
