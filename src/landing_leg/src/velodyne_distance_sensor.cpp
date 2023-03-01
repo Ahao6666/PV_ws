@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     mGazeboNode->Init();
     gazebo::transport::SubscriberPtr velo_dist_Sub = mGazeboNode->
         Subscribe("~/iris_pv/landing_leg/velodyne/sensor/scan",Velodyne_distance_cb);
-    mRosPub = nh.advertise<sensor_msgs::LaserScan>("/mavros/distance_sensor/hrlv_ez4_pub", 10);
+    mRosPub = nh.advertise<sensor_msgs::Range>("/mavros/distance_sensor/hrlv_ez4_pub", 10);
 
     ros::Rate rate(10.0);
 
