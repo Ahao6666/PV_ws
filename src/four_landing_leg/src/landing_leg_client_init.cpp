@@ -4,7 +4,7 @@
  *****************************************************************************/
 
 /******************************************************************************
- * @file landing_leg_client_init
+ * @file four_landing_leg_client_init
  * @author Shen Jiahao <shenjiahao@westlake.edu.cn>
  * @brief test the base operation of the landing leg
  *****************************************************************************/
@@ -12,7 +12,7 @@
 
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
-#include <landing_leg/trajAction.h>
+#include <four_landing_leg/trajAction.h>
 #include <vector>
 #include <math.h>
 #include <string>
@@ -23,18 +23,18 @@
 
 // callback to get "result" message from action server
 void doneCb(const actionlib::SimpleClientGoalState& state,
-		const landing_leg::trajResultConstPtr& result) {
+		const four_landing_leg::trajResultConstPtr& result) {
 	ROS_INFO("doneCb: server responded with state [%s]", state.toString().c_str());
 }
 
 // trajectory action client for the gripper robot
 int main(int argc, char** argv) {
-	ros::init(argc, argv, "landing_leg_client_init_node");
+	ros::init(argc, argv, "four_landing_leg_client_init_node");
 	ros::NodeHandle nh;
 
 	// initialize an action client
-	actionlib::SimpleActionClient<landing_leg::trajAction> action_client(
-		"landing_leg", true);
+	actionlib::SimpleActionClient<four_landing_leg::trajAction> action_client(
+		"four_landing_leg", true);
 	// try to connect the client to action server
 	bool server_exist = action_client.waitForServer(ros::Duration(5.0));
 	ros::Duration sleep1s(1);
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 	// if here, then connected to the server
 	ROS_INFO("connected to action server");
 
-	landing_leg::trajGoal goal;
+	four_landing_leg::trajGoal goal;
 	// instantiate goal message
 	trajectory_msgs::JointTrajectory trajectory;
 	trajectory_msgs::JointTrajectoryPoint trajectory_points;

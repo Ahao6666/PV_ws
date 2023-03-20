@@ -6,7 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   mavros
   roscpp
   cmake_modules
-  landing_leg
+  four_landing_leg
 )
 
 find_package(Eigen3 REQUIRED) # 添加 2

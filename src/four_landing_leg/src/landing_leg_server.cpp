@@ -9,7 +9,7 @@
  *****************************************************************************/
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
-#include <landing_leg/trajAction.h>
+#include <four_landing_leg/trajAction.h>
 #include <std_msgs/Float64.h>
 #include <vector>
 #include <string>
@@ -25,22 +25,22 @@ public:
 	~TrajectoryActionServer(void) {}
 private:
 	void send_joint_commands_(std::vector<double> cmd_jnts);
-	void executeCB(const actionlib::SimpleActionServer<landing_leg::trajAction>::GoalConstPtr& goal);
+	void executeCB(const actionlib::SimpleActionServer<four_landing_leg::trajAction>::GoalConstPtr& goal);
 
 	ros::NodeHandle nh_; // a nodehandle is needed
 	// each joint in the robot needs a pos_cmd_publisher
 	std::vector<ros::Publisher> pos_cmd_publisher_;  // initialization will be in executeCB()
-	actionlib::SimpleActionServer<landing_leg::trajAction> as_;
+	actionlib::SimpleActionServer<four_landing_leg::trajAction> as_;
 
 	// message types for the action
-	landing_leg::trajActionGoal goal_; // goal message
-	landing_leg::trajActionResult result_; // result message
-	landing_leg::trajActionFeedback feedback_; // feedback message, not used
+	four_landing_leg::trajActionGoal goal_; // goal message
+	four_landing_leg::trajActionResult result_; // result message
+	four_landing_leg::trajActionFeedback feedback_; // feedback message, not used
 };
 
 TrajectoryActionServer::TrajectoryActionServer(ros::NodeHandle* nodehandle):
 	nh_(*nodehandle), // dereference the pointer and pass the value
-	as_(nh_, "landing_leg", boost::bind(&TrajectoryActionServer::executeCB, this, _1), false)
+	as_(nh_, "four_landing_leg", boost::bind(&TrajectoryActionServer::executeCB, this, _1), false)
 {
 	ROS_INFO("in constructor of TrajectoryActionServer...");
 	as_.start(); // start the "landing_leg_server"
@@ -62,7 +62,7 @@ void TrajectoryActionServer::send_joint_commands_(std::vector<double> cmd_jnts) 
 }
 
 // substantial work will be done here
-void TrajectoryActionServer::executeCB(const actionlib::SimpleActionServer<landing_leg::trajAction>::GoalConstPtr& goal) {
+void TrajectoryActionServer::executeCB(const actionlib::SimpleActionServer<four_landing_leg::trajAction>::GoalConstPtr& goal) {
 	ROS_INFO("in executecb...");
 	// avoid using "goal->trajectory" too much
 	trajectory_msgs::JointTrajectory trajectory = goal -> trajectory;

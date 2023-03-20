@@ -9,7 +9,7 @@
  *****************************************************************************/
 
 #include <ros/ros.h>
-#include <landing_leg/kpkv_msg.h>
+#include <four_landing_leg/kpkv_msg.h>
 #include <string>
 #include <iostream>
 
@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "kpkv_serviceClient_node");
 	ros::NodeHandle nh;
 	ros::ServiceClient client;
-	landing_leg::kpkv_msg srv;
+	four_landing_leg::kpkv_msg srv;
 	// cin variables
 	std::string in_joint_name;
 	double in_kp, in_kv;
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 		std::cin >> in_joint_name;
 		if (in_joint_name.compare("x") == 0)
 			return 0;
-		client = nh.serviceClient<landing_leg::kpkv_msg>(in_joint_name + "_kpkv_service");
+		client = nh.serviceClient<four_landing_leg::kpkv_msg>(in_joint_name + "_kpkv_service");
 		// get the value of kp and kv
 		std::cout << "enter the value of kp: ";
 		std::cin >> in_kp;

@@ -8,40 +8,37 @@
  * @author Shen Jiahao <shenjiahao@westlake.edu.cn>
  *****************************************************************************/
 
-
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
-#include <landing_leg/trajAction.h>
+#include <four_landing_leg/trajAction.h>
 #include <vector>
 #include <math.h>
 #include <string>
 #include <gazebo_msgs/GetJointProperties.h>
 #include <gazebo_msgs/GetModelState.h>
 #include <geometry_msgs/Point.h>
-#include "landing_leg/landing_leg_cmd.h"
-
-// #include <sensors/sensors.hh>
+#include "four_landing_leg/four_landing_leg_cmd.h"
 
 // callback to get "result" message from action server
 void doneCb(const actionlib::SimpleClientGoalState& state,
-		const landing_leg::trajResultConstPtr& result) {
+		const four_landing_leg::trajResultConstPtr& result) {
 	ROS_INFO("doneCb: server responded with state [%s]", state.toString().c_str());
 }
 
-landing_leg::landing_leg_cmd landing_leg_cmd_;
-void landing_leg_cmd_cb(const landing_leg::landing_leg_cmd::ConstPtr& msg){
+four_landing_leg::four_landing_leg_cmd landing_leg_cmd_;
+void landing_leg_cmd_cb(const four_landing_leg::four_landing_leg_cmd::ConstPtr& msg){
     landing_leg_cmd_ = *msg;
 }
 
 // trajectory action client for the gripper robot
 int main(int argc, char** argv) {
-	ros::init(argc, argv, "landing_leg_client_node");
+	ros::init(argc, argv, "four_landing_leg_client_node");
 	ros::NodeHandle nh;
 
-    ros::Subscriber state_sub = nh.subscribe<landing_leg::landing_leg_cmd>
+    ros::Subscriber state_sub = nh.subscribe<four_landing_leg::four_landing_leg_cmd>
             ("landing_leg_cmd", 10, landing_leg_cmd_cb);
 	// initialize an action client
-	actionlib::SimpleActionClient<landing_leg::trajAction> action_client(
+	actionlib::SimpleActionClient<four_landing_leg::trajAction> action_client(
 		"landing_leg", true);
 	// try to connect the client to action server
 	bool server_exist = action_client.waitForServer(ros::Duration(5.0));
@@ -54,7 +51,7 @@ int main(int argc, char** argv) {
 	// if here, then connected to the server
 	ROS_INFO("connected to action server");
 
-	landing_leg::trajGoal goal;
+	four_landing_leg::trajGoal goal;
 	// instantiate goal message
 	trajectory_msgs::JointTrajectory trajectory;
 	trajectory_msgs::JointTrajectoryPoint trajectory_points;
@@ -89,7 +86,7 @@ int main(int argc, char** argv) {
 
     while(ros::ok()){
 
-		// ROS_INFO("get landing_leg command and move");
+		// ROS_INFO("get four_landing_leg command and move");
 
 		// get the original joint positions when this node is invoked
 		std::vector<double> origin_jnts;

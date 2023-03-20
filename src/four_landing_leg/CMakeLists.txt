@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(landing_leg)
+project(four_landing_leg)
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
@@ -27,7 +27,7 @@ add_service_files(
 ## Generate message in the 'msg' folder
 add_message_files(
   FILES
-  landing_leg_cmd.msg
+  four_landing_leg_cmd.msg
 )
 
 ## Generate actions in the 'action' folder
@@ -46,7 +46,7 @@ generate_messages(
 
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES landing_leg
+#  LIBRARIES four_landing_leg
   CATKIN_DEPENDS actionlib catkin_simple roscpp rospy std_msgs message_runtime
 #  DEPENDS system_lib
 )
@@ -72,18 +72,18 @@ add_executable(test src/test.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(landing_leg_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(landing_leg_controller landing_leg_gencpp)
-add_dependencies(landing_leg_kpkv_serviceClient landing_leg_gencpp)
-add_dependencies(landing_leg_server landing_leg_gencpp)
-add_dependencies(landing_leg_client landing_leg_gencpp)
-add_dependencies(landing_leg_client_init landing_leg_gencpp)
+add_dependencies(landing_leg_controller four_landing_leg_gencpp)
+add_dependencies(landing_leg_kpkv_serviceClient four_landing_leg_gencpp)
+add_dependencies(landing_leg_server four_landing_leg_gencpp)
+add_dependencies(landing_leg_client four_landing_leg_gencpp)
+add_dependencies(landing_leg_client_init four_landing_leg_gencpp)
 add_dependencies(landing_leg_tcp_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(landing_leg_tcp_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(landing_leg_ft_sensor landing_leg_gencpp)
-add_dependencies(force_torque_sensor landing_leg_gencpp)
-add_dependencies(velodyne_distance_sensor landing_leg_gencpp)
-add_dependencies(pv_car_pose_pub landing_leg_gencpp)
-add_dependencies(test landing_leg_gencpp)
+add_dependencies(landing_leg_ft_sensor four_landing_leg_gencpp)
+add_dependencies(force_torque_sensor four_landing_leg_gencpp)
+add_dependencies(velodyne_distance_sensor four_landing_leg_gencpp)
+add_dependencies(pv_car_pose_pub four_landing_leg_gencpp)
+add_dependencies(test four_landing_leg_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(landing_leg_node

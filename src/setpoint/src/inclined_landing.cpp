@@ -21,7 +21,7 @@
 #include <cmath>
 #include <Eigen/Eigen>
 #include <sensor_msgs/LaserScan.h>
-#include "landing_leg/landing_leg_cmd.h"
+#include "four_landing_leg/four_landing_leg_cmd.h"
 
 /**
  * @brief switch the Quaterniond to euler angle
@@ -109,8 +109,8 @@ int main(int argc, char **argv)
     ros::Publisher local_pos_pub_ = nh_.advertise<geometry_msgs::PoseStamped>
             ("mavros/setpoint_position/local", 10);
     // landing leg command publish
-    ros::Publisher landing_leg_cmd_pub = nh_.advertise<landing_leg::landing_leg_cmd>
-            ("landing_leg_cmd", 10);
+    ros::Publisher landing_leg_cmd_pub = nh_.advertise<four_landing_leg::four_landing_leg_cmd>
+            ("four_landing_leg_cmd", 10);
     // attitude setpoint publish
     // ros::Publisher att_tar_pub = nh_.advertise<mavros_msgs::AttitudeTarget>
     //         ("mavros/setpoint_raw/attitude", 10);
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
     disarm_cmd.request.value = false;
 
     // landing leg command 
-    landing_leg::landing_leg_cmd landing_leg_cmd_;
+    four_landing_leg::four_landing_leg_cmd landing_leg_cmd_;
 
     ros::Time last_time = ros::Time::now();
     ros::Time last_request = ros::Time::now();
