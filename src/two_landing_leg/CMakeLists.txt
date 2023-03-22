@@ -58,12 +58,14 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 
 add_executable(landing_leg_controller src/landing_leg_controller.cpp)
 add_executable(landing_leg_command src/landing_leg_command.cpp)
+add_executable(velodyne_distance_sensor src/velodyne_distance_sensor.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(landing_leg_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(landing_leg_controller four_landing_leg_gencpp)
 add_dependencies(landing_leg_command four_landing_leg_gencpp)
+add_dependencies(velodyne_distance_sensor four_landing_leg_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(landing_leg_node
@@ -71,3 +73,4 @@ add_dependencies(landing_leg_command four_landing_leg_gencpp)
 # )
 target_link_libraries(landing_leg_controller ${catkin_LIBRARIES})
 target_link_libraries(landing_leg_command ${catkin_LIBRARIES})
+target_link_libraries(velodyne_distance_sensor ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})

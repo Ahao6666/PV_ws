@@ -20,7 +20,7 @@
         "/home/ahao/mavros_ws/src/mavros/mavros/include/**",
         "/home/ahao/mavros_ws/src/mavros/mavros_msgs/include/**",
         "/home/ahao/catkin_ws/src/navigator/include/**",
-        "/home/ahao/PV_ws/src/setpoint/include/**",
+        "/home/ahao/PV_ws/src/pv_mission/include/**",
         "/home/ahao/catkin_ws/src/sim2real/include/**",
         "/home/ahao/catkin_ws/src/task_plan/include/**",
         "/home/ahao/mavros_ws/src/mavros/test_mavros/include/**",

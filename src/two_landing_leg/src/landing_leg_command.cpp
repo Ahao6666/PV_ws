@@ -20,8 +20,9 @@ int main(int argc, char** argv) {
 
 	while (ros::ok()) {
 		std_msgs::Float64 cmd_msg;
-		cmd_msg.data = -1.0;
+		cmd_msg.data = 1.5;
 		long_landing_leg_cmd_pub.publish(cmd_msg);
+		cmd_msg.data = -0.2;
 		short_landing_leg_cmd_pub.publish(cmd_msg);
 		
 		ros::spinOnce();
