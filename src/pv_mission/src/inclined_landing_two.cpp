@@ -19,6 +19,7 @@
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
+#include <mavros_msgs/Thrust.h>
 #include <sensor_msgs/Range.h>
 #include <std_msgs/Float64.h>
 #include <ros/ros.h>
@@ -75,25 +76,25 @@ int main(int argc, char **argv)
     ros::NodeHandle nh_;
     // vehicle state callback function
     ros::Subscriber state_sub_ = nh_.subscribe<mavros_msgs::State>
-            ("mavros/state", 10, state_cb);
+            ("/mavros/state", 10, state_cb);
     // local position callback function
     ros::Subscriber local_position_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>
-            ("mavros/local_position/pose", 10, local_position_cb);
+            ("/mavros/local_position/pose", 10, local_position_cb);
     // get velodyne distance data callback function
     ros::Subscriber velodyne_dist_sub_ = nh_.subscribe<sensor_msgs::Range>
             ("/mavros/distance_sensor/hrlv_ez4_pub", 10, velodyne_distance_cb);
     // set UAV local position 
     ros::Publisher local_pos_pub_ = nh_.advertise<geometry_msgs::PoseStamped>
-            ("mavros/setpoint_position/local", 10);
+            ("/mavros/setpoint_position/local", 10);
+    // publish thrust topic
+    ros::Publisher thrust_pub_ = nh_.advertise<mavros_msgs::Thrust>
+            ("/mavros/setpoint_attitude/thrust", 10);            
     // landing leg command publish
     ros::Publisher long_landing_leg_cmd_pub = nh_.advertise<std_msgs::Float64>("long_leg_joint_pos_cmd", 10);
     ros::Publisher short_landing_leg_cmd_pub = nh_.advertise<std_msgs::Float64>("short_leg_joint_pos_cmd", 10);
     // UAV arm state switch
     ros::ServiceClient arming_client = nh_.serviceClient<mavros_msgs::CommandBool>
-            ("mavros/cmd/arming");
-    // vehicle mode set
-    ros::ServiceClient set_mode_client = nh_.serviceClient<mavros_msgs::SetMode>
-            ("mavros/set_mode");
+            ("/mavros/cmd/arming");
     // get pv car model state client
     ros::ServiceClient get_model_state_client_ = nh_.serviceClient<gazebo_msgs::GetModelState>(
 		"/gazebo/get_model_state");
@@ -101,12 +102,13 @@ int main(int argc, char **argv)
 	geometry_msgs::Point pv_car_pos_;    // {float64 x, float64 y, float z}
     Eigen::Quaterniond pv_car_ori_;     // {w,x,y,z}
     geometry_msgs::PoseStamped UAV_pose_set;    // UAV setpoint
+    mavros_msgs::Thrust thrust_cmd;    // publish thrust to 0 when close to PV car
     // 旋转向量
     Eigen::AngleAxisd rollAngle_sp;
     Eigen::AngleAxisd pitchAngle_sp;
     Eigen::AngleAxisd yawAngle_sp;
     Eigen::Quaterniond uav_quaternion_sp;     // {w,x,y,z}
-
+    bool land_detected = false;
     // get UAV local position
     double position_x = local_position.pose.position.x;
     double position_y = local_position.pose.position.y;
@@ -124,9 +126,7 @@ int main(int argc, char **argv)
         ros::spinOnce();
         rate.sleep();
     }
-    // manual mode and disarm command
-    mavros_msgs::SetMode set_mode_manual;
-    set_mode_manual.request.custom_mode = "MANUAL";
+    // disarm command
     mavros_msgs::CommandBool disarm_cmd;
     disarm_cmd.request.value = false;
 
@@ -180,14 +180,13 @@ int main(int argc, char **argv)
         UAV_pose_set.pose.orientation.y = uav_quaternion_sp.y();
         UAV_pose_set.pose.orientation.z = uav_quaternion_sp.z();
         UAV_pose_set.pose.orientation.w = uav_quaternion_sp.w();
-        local_pos_pub_.publish(UAV_pose_set);
+        
 		std_msgs::Float64 landing_cmd_msg;
-
-        // landing_leg is off when the altitude of UAV is higher than 0.3m
-        if(current_state.mode == "OFFBOARD" && local_position.pose.position.z > 0.3){
-            landing_cmd_msg.data = 0.8;
+        // change the landing leg according to landing state
+        if( land_detected == false){
+            landing_cmd_msg.data = 1.1;
             long_landing_leg_cmd_pub.publish(landing_cmd_msg);
-            landing_cmd_msg.data = -0.2;
+            landing_cmd_msg.data = -0.3;
             short_landing_leg_cmd_pub.publish(landing_cmd_msg);
         }
         else{
@@ -196,25 +195,22 @@ int main(int argc, char **argv)
             landing_cmd_msg.data = 0.0;
             short_landing_leg_cmd_pub.publish(landing_cmd_msg);
         }
-        // ROS_INFO("w=%f,\tx=%f,\ty=%f,\tz=%f",local_position.pose.orientation.w,local_position.pose.orientation.x,
-        //     local_position.pose.orientation.y,local_position.pose.orientation.z);
-        if(velodyne_distance_data.range < 0.15){
+
+        if(velodyne_distance_data.range > 0.15){
+            ROS_INFO("UAV are not close to PV car!");
+            local_pos_pub_.publish(UAV_pose_set);
+        }
+        else{
             ROS_INFO("legs are close to PV car!");
-            // set the mode to manual instead of offboard          
-            if( set_mode_client.call(set_mode_manual) &&
-                set_mode_manual.response.mode_sent)
-                    ROS_INFO("manual mode enabled");
-            // if rotors are arm, disarm them
-            if( current_state.armed && (ros::Time::now() - last_request > ros::Duration(3.0))){
-                if( arming_client.call(disarm_cmd) && disarm_cmd.response.success)
-                    ROS_INFO("Vehicle disarmed succeed");
-                else
-                    ROS_INFO("Vehicle disarmed error");
-            last_request = ros::Time::now();
+            thrust_cmd.thrust = 0;
+            thrust_cmd.header.stamp = ros::Time::now();
+            thrust_pub_.publish(thrust_cmd);
+            if( (arming_client.call(disarm_cmd) && disarm_cmd.response.success && 
+                ros::Time::now() - last_request > ros::Duration(5.0))){
+                    land_detected = true;
+                    last_request = ros::Time::now();
             }
-            }
-        else
-            ROS_INFO("legs are not land detected!");
+        }
 
         std::cout<<"velodyne_distance_data:"<<velodyne_distance_data.range<<std::endl;
         ros::spinOnce();
