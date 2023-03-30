@@ -184,8 +184,8 @@ int main(int argc, char **argv) {
 	Joint joint1(nh, "hexarotor_landing_leg::long_leg_joint", dt);
 	Joint joint2(nh, "hexarotor_landing_leg::short_leg_joint", dt);
 
-	joint1.kpkvSetting(4.0, 0.1);
-	joint2.kpkvSetting(4.0, 0.1);
+	joint1.kpkvSetting(20.0, 0.1);
+	joint2.kpkvSetting(20.0, 0.1);
 
 	ros::Rate rate_timer(1 / dt);
 	while(ros::ok()) {

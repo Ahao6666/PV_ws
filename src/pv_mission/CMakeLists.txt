@@ -38,6 +38,7 @@ include_directories( ${/usr/local/include/eigen3/Eigen}) # 添加3
  add_executable(att_setpoint src/att_setpoint.cpp)
  add_executable(inclined_landing src/inclined_landing.cpp)
  add_executable(inclined_landing_two src/inclined_landing_two.cpp)
+ add_executable(inclined_takeoff_two src/inclined_takeoff_two.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -50,4 +51,5 @@ include_directories( ${/usr/local/include/eigen3/Eigen}) # 添加3
  target_link_libraries(att_setpoint   ${catkin_LIBRARIES} )
  target_link_libraries(inclined_landing   ${catkin_LIBRARIES} )
  target_link_libraries(inclined_landing_two   ${catkin_LIBRARIES} )
+ target_link_libraries(inclined_takeoff_two   ${catkin_LIBRARIES} )
 

@@ -53,7 +53,11 @@ Eigen::Vector3d ToEulerAngles(Eigen::Quaterniond q) {
  
     return angles;
 }
-
+// 【回调函数】 long landing leg
+std_msgs::Float64 landing_leg_long_pos;
+void landing_leg_long_cb(const std_msgs::Float64::ConstPtr& msg){
+    landing_leg_long_pos = *msg;
+}
 // Get vehicle state
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
@@ -74,28 +78,31 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "inclined_landing_two_node");
     ros::NodeHandle nh_;
-    // vehicle state callback function
+    // 【订阅】 long landing_leg pos
+    ros::Subscriber landing_leg_long_sub_ = nh_.subscribe<std_msgs::Float64>
+            ("/long_leg_joint_pos", 10, landing_leg_long_cb);
+    // 【订阅】 vehicle state callback function
     ros::Subscriber state_sub_ = nh_.subscribe<mavros_msgs::State>
             ("/mavros/state", 10, state_cb);
-    // local position callback function
+    // 【订阅】 local position callback function
     ros::Subscriber local_position_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>
             ("/mavros/local_position/pose", 10, local_position_cb);
-    // get velodyne distance data callback function
+    // 【订阅】 get velodyne distance data callback function
     ros::Subscriber velodyne_dist_sub_ = nh_.subscribe<sensor_msgs::Range>
             ("/mavros/distance_sensor/hrlv_ez4_pub", 10, velodyne_distance_cb);
-    // set UAV local position 
+    // 【发布】 set UAV local position 
     ros::Publisher local_pos_pub_ = nh_.advertise<geometry_msgs::PoseStamped>
             ("/mavros/setpoint_position/local", 10);
-    // publish thrust topic
+    // 【发布】 publish thrust topic
     ros::Publisher thrust_pub_ = nh_.advertise<mavros_msgs::Thrust>
             ("/mavros/setpoint_attitude/thrust", 10);            
-    // landing leg command publish
+    // 【发布】 landing leg command publish
     ros::Publisher long_landing_leg_cmd_pub = nh_.advertise<std_msgs::Float64>("long_leg_joint_pos_cmd", 10);
     ros::Publisher short_landing_leg_cmd_pub = nh_.advertise<std_msgs::Float64>("short_leg_joint_pos_cmd", 10);
-    // UAV arm state switch
+    // 【服务】 UAV arm state switch
     ros::ServiceClient arming_client = nh_.serviceClient<mavros_msgs::CommandBool>
             ("/mavros/cmd/arming");
-    // get pv car model state client
+    // 【服务】 get pv car model state client
     ros::ServiceClient get_model_state_client_ = nh_.serviceClient<gazebo_msgs::GetModelState>(
 		"/gazebo/get_model_state");
 	gazebo_msgs::GetModelState get_model_state_srv_msg_;
@@ -199,14 +206,15 @@ int main(int argc, char **argv)
         if(velodyne_distance_data.range > 0.15){
             ROS_INFO("UAV are not close to PV car!");
             local_pos_pub_.publish(UAV_pose_set);
-        }
+            land_detected = false;
+            }
         else{
             ROS_INFO("legs are close to PV car!");
             thrust_cmd.thrust = 0;
             thrust_cmd.header.stamp = ros::Time::now();
             thrust_pub_.publish(thrust_cmd);
-            if( (arming_client.call(disarm_cmd) && disarm_cmd.response.success && 
-                ros::Time::now() - last_request > ros::Duration(5.0))){
+            if( arming_client.call(disarm_cmd) && disarm_cmd.response.success && 
+                ros::Time::now() - last_request > ros::Duration(5.0)){
                     land_detected = true;
                     last_request = ros::Time::now();
             }
